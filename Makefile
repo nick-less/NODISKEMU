@@ -1,7 +1,7 @@
 # Hey Emacs, this is a -*- makefile -*-
 
 ifndef CONFIG
-  CONFIG = config
+  CONFIG = configs/config-nano
 endif
 
 CONFDATA     := $(shell perl scripts/configparser.pl --confdata $(CONFIG))

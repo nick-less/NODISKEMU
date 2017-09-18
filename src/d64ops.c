@@ -107,18 +107,22 @@ static uint8_t   bam_refcount;
 /*  Forward declarations                                                     */
 /* ------------------------------------------------------------------------- */
 
+#ifndef D80_ONLY
 static uint8_t d64_opendir(dh_t *dh, path_t *path);
-
 static void format_d41_image(uint8_t part, buffer_t *buf, uint8_t *name, uint8_t *idbuf);
 static void format_d71_image(uint8_t part, buffer_t *buf, uint8_t *name, uint8_t *idbuf);
 static void format_d81_image(uint8_t part, buffer_t *buf, uint8_t *name, uint8_t *idbuf);
+#endif
 static void format_d80_image(uint8_t part, buffer_t *buf, uint8_t *name, uint8_t *idbuf);
+#ifndef D80_ONLY
 static void format_d82_image(uint8_t part, buffer_t *buf, uint8_t *name, uint8_t *idbuf);
 static void format_dnp_image(uint8_t part, buffer_t *buf, uint8_t *name, uint8_t *idbuf);
-
+#endif
 /* ------------------------------------------------------------------------- */
 /*  Utility functions                                                        */
 /* ------------------------------------------------------------------------- */
+
+#ifndef D80_ONLY
 
 static const PROGMEM struct param_s d41param = {
   18, 1, 35, 0x90, 0xa2, 10, 3, format_d41_image
@@ -135,14 +139,14 @@ static const PROGMEM struct param_s d81param = {
 static const PROGMEM struct param_s dnpparam = {
   1, 1, 0, DNP_LABEL_OFFSET, DNP_ID_OFFSET, 1, 1, format_dnp_image
 };
-
+static const PROGMEM struct param_s d82param = {
+  39, 1, 154, 6, 0x18, 5, 3, format_d82_image
+};
+#endif
 static const PROGMEM struct param_s d80param = {
   39, 1, 77, 6, 0x18, 5, 3, format_d80_image
 };
 
-static const PROGMEM struct param_s d82param = {
-  39, 1, 154, 6, 0x18, 5, 3, format_d82_image
-};
 
 
 /**
@@ -172,6 +176,7 @@ static uint16_t sector_lba(uint8_t part, uint8_t track, const uint8_t sector) {
   track--; /* Track numbers are 1-based */
 
   switch (partition[part].imagetype & D64_TYPE_MASK) {
+#ifndef D80_ONLY
   case D64_TYPE_D41:
   case D64_TYPE_D71:
   default:
@@ -192,7 +197,7 @@ static uint16_t sector_lba(uint8_t part, uint8_t track, const uint8_t sector) {
 
   case D64_TYPE_DNP:
     return track*256 + sector;
-
+#endif
   case D64_TYPE_D80:
   case D64_TYPE_D82:
     if (track >= 78) {
@@ -231,6 +236,8 @@ static uint32_t sector_offset(uint8_t part, uint8_t track, const uint8_t sector)
  */
 static uint16_t sectors_per_track(uint8_t part, uint8_t track) {
   switch (partition[part].imagetype & D64_TYPE_MASK) {
+#ifndef D80_ONLY
+   
   case D64_TYPE_D41:
   case D64_TYPE_D71:
   default:
@@ -249,7 +256,7 @@ static uint16_t sectors_per_track(uint8_t part, uint8_t track) {
 
   case D64_TYPE_DNP:
     return 256;
-
+#endif
   case D64_TYPE_D80:
   case D64_TYPE_D82:
     if (track > 77)
@@ -292,7 +299,8 @@ static uint8_t checked_read(uint8_t part, uint8_t track, uint8_t sector, uint8_t
       memset(errorcache.errors, 1, sizeof(errorcache.errors));
 
       switch (partition[part].imagetype & D64_TYPE_MASK) {
-      case D64_TYPE_D41:
+#ifndef D80_ONLY
+        case D64_TYPE_D41:
         if (image_read(part, D41_ERROR_OFFSET + sector_lba(part,track,0),
                        errorcache.errors, sectors_per_track(part, track)) >= 2)
           return 2;
@@ -309,15 +317,14 @@ static uint8_t checked_read(uint8_t part, uint8_t track, uint8_t sector, uint8_t
                        errorcache.errors, sectors_per_track(part, track)) >= 2)
           return 2;
         break;
-
-      case D64_TYPE_D80:
-        if (image_read(part, D80_ERROR_OFFSET + sector_lba(part,track,0),
+      case D64_TYPE_D82:
+        if (image_read(part, D82_ERROR_OFFSET + sector_lba(part,track,0),
                        errorcache.errors, sectors_per_track(part, track)) >= 2)
           return 2;
         break;
-
-      case D64_TYPE_D82:
-        if (image_read(part, D82_ERROR_OFFSET + sector_lba(part,track,0),
+#endif
+      case D64_TYPE_D80:
+        if (image_read(part, D80_ERROR_OFFSET + sector_lba(part,track,0),
                        errorcache.errors, sectors_per_track(part, track)) >= 2)
           return 2;
         break;
@@ -472,7 +479,8 @@ static uint8_t bam_buffer_flush(buffer_t *buf) {
  * This function is the exported interface to force the BAM buffer
  * contents to disk. Returns 0 if successful, != 0 otherwise.
  */
-uint8_t d64_bam_commit(void) {
+ #ifndef D80_ONLY
+ uint8_t d64_bam_commit(void) {
   uint8_t res = 0;
 
   if (bam_buffer)
@@ -483,7 +491,7 @@ uint8_t d64_bam_commit(void) {
 
   return 0;
 }
-
+#endif
 /**
  * bam_buffer_alloc - allocates a buffer for the BAM
  * @buf: pointer to the BAM buffer pointer
@@ -558,6 +566,7 @@ static uint8_t move_bam_window(uint8_t part, uint8_t track, bamdata_t type, uint
   uint8_t t,s, pos;
 
   switch(partition[part].imagetype & D64_TYPE_MASK) {
+#ifndef D80_ONLY
   case D64_TYPE_D41:
   default:
     t   = D41_BAM_TRACK;
@@ -594,7 +603,7 @@ static uint8_t move_bam_window(uint8_t part, uint8_t track, bamdata_t type, uint
     s   = DNP_BAM_SECTOR + (track >> 3);
     pos = (track & 0x07) * 32;
     break;
-
+#endif
   case D64_TYPE_D80:
   case D64_TYPE_D82:
     t    = D80_BAM_TRACK;
@@ -692,7 +701,7 @@ static uint16_t sectors_free(uint8_t part, uint8_t track) {
     return 0;
 
   switch (partition[part].imagetype & D64_TYPE_MASK) {
-
+#ifndef D80_ONLY
   case D64_TYPE_DNP:
     if(move_bam_window(part,track,BAM_FREECOUNT,&trackmap))
       return 0;
@@ -710,6 +719,7 @@ static uint16_t sectors_free(uint8_t part, uint8_t track) {
   case D64_TYPE_D71:
   case D64_TYPE_D81:
   case D64_TYPE_D41:
+#endif
   case D64_TYPE_D80:
   case D64_TYPE_D82:
   default:
@@ -1277,6 +1287,7 @@ uint8_t d64_mount(path_t *path, uint8_t *name) {
   uint32_t fsize = partition[part].imagehandle.fsize;
 
   switch (fsize) {
+#ifndef D80_ONLY
   case 174848:
     imagetype = D64_TYPE_D41;
     memcpy_P(&partition[part].d64data, &d41param, sizeof(struct param_s));
@@ -1306,17 +1317,6 @@ uint8_t d64_mount(path_t *path, uint8_t *name) {
     imagetype = D64_TYPE_D81 | D64_HAS_ERRORINFO;
     memcpy_P(&partition[part].d64data, &d81param, sizeof(struct param_s));
     break;
-
-  case 533248:
-    imagetype = D64_TYPE_D80;
-    memcpy_P(&partition[part].d64data, &d80param, sizeof(struct param_s));
-    break;
-
-  case 535331:
-    imagetype = D64_TYPE_D80 | D64_HAS_ERRORINFO;
-    memcpy_P(&partition[part].d64data, &d80param, sizeof(struct param_s));
-    break;
-
   case 1066496:
     imagetype = D64_TYPE_D82;
     memcpy_P(&partition[part].d64data, &d82param, sizeof(struct param_s));
@@ -1325,6 +1325,15 @@ uint8_t d64_mount(path_t *path, uint8_t *name) {
   case 1070662:
     imagetype = D64_TYPE_D82 | D64_HAS_ERRORINFO;
     memcpy_P(&partition[part].d64data, &d82param, sizeof(struct param_s));
+    break;
+#endif
+  case 533248:
+    imagetype = D64_TYPE_D80;
+    memcpy_P(&partition[part].d64data, &d80param, sizeof(struct param_s));
+    break;
+  case 535331:
+    imagetype = D64_TYPE_D80 | D64_HAS_ERRORINFO;
+    memcpy_P(&partition[part].d64data, &d80param, sizeof(struct param_s));
     break;
 
   default:
@@ -1946,6 +1955,8 @@ static void format_copy_label(uint8_t part, uint8_t *data, uint8_t *name, uint8_
   memcpy(data + get_param(part, ID_OFFSET), idbuf, 5);
 }
 
+#ifndef D80_ONLY
+
 static void format_d41_image(uint8_t part, buffer_t *buf, uint8_t *name, uint8_t *idbuf) {
   /* allocate BAM and first directory sector */
   for (uint8_t s=0; s<2; s++)
@@ -2046,7 +2057,7 @@ static void format_dnp_image(uint8_t part, buffer_t *buf, uint8_t *name, uint8_t
 
   clear_dir_sector(part, 1, DNP_ROOTDIR_SECTOR, buf->data);
 }
-
+#endif
 static void format_d80_image(uint8_t part, buffer_t *buf, uint8_t *name, uint8_t *idbuf) {
   // TODO: implement D80 format
 }
@@ -2054,7 +2065,8 @@ static void format_d80_image(uint8_t part, buffer_t *buf, uint8_t *name, uint8_t
 static void format_d82_image(uint8_t part, buffer_t *buf, uint8_t *name, uint8_t *idbuf) {
 }
   // TODO: implement D82 format
-
+#ifndef D80_ONLY
+  
 static void d64_format(uint8_t part, uint8_t *name, uint8_t *id) {
   buffer_t *buf;
   uint8_t  idbuf[5];
@@ -2129,8 +2141,7 @@ static void d64_format(uint8_t part, uint8_t *name, uint8_t *id) {
 
   /* FIXME: Clear the error info block */
 }
-
-
+#endif
 /* ------------------------------------------------------------------------- */
 /*  ops struct                                                               */
 /* ------------------------------------------------------------------------- */

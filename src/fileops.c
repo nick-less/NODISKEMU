@@ -283,16 +283,19 @@ static uint8_t pdir_refill(buffer_t* buf) {
     }
 
     dent.blocksize = buf->pvt.pdir.part+1;
-
+    #ifdef CONFIG_HAVE_D64
+    
     if (partition[buf->pvt.pdir.part].fop == &d64ops) {
       /* Use the correct partition type for Dxx images */
       dent.typeflags = (partition[buf->pvt.pdir.part].imagetype & D64_TYPE_MASK)
                        + TYPE_NAT - 1;
     } else {
+    #endif
       /* Anything else is "native" */
       dent.typeflags = TYPE_NAT;
+    #ifdef CONFIG_HAVE_D64
     }
-
+    #endif
     buf->pvt.pdir.part++;
 
     /* Parse the name pattern */
@@ -341,8 +344,11 @@ static uint8_t dir_refill(buffer_t *buf) {
                      &dent)) {
   case 0:
     if (image_as_dir != IMAGE_DIR_NORMAL &&
-        dent.opstype == OPSTYPE_FAT &&
-        check_imageext(dent.pvt.fat.realname) != IMG_UNKNOWN) {
+        dent.opstype == OPSTYPE_FAT 
+        #ifdef CONFIG_HAVE_D64
+        && check_imageext(dent.pvt.fat.realname) != IMG_UNKNOWN
+        #endif
+      ) {
       if (image_as_dir == IMAGE_DIR_DIR) {
         dent.typeflags = (dent.typeflags & 0xf0) | TYPE_DIR;
       } else {
@@ -412,8 +418,11 @@ static uint8_t rawdir_refill(buffer_t *buf) {
     }
 
     if (image_as_dir != IMAGE_DIR_NORMAL &&
-        dent.opstype == OPSTYPE_FAT &&
-        check_imageext(dent.pvt.fat.realname) != IMG_UNKNOWN) {
+        dent.opstype == OPSTYPE_FAT 
+        #ifdef CONFIG_HAVE_D64
+        && check_imageext(dent.pvt.fat.realname) != IMG_UNKNOWN
+        #endif
+      ) {
       if (image_as_dir == IMAGE_DIR_DIR) {
         dent.typeflags = (dent.typeflags & 0xf0) | TYPE_DIR;
       } else {
@@ -626,12 +635,13 @@ scandone:
   if (secondary != 0) {
     /* Raw directory */
 
+#ifdef CONFIG_HAVE_D64
     if (partition[path.part].fop == &d64ops) {
       /* No need to fake it for D64 files */
       d64_raw_directory(&path, buf);
       return;
     }
-
+#endif
     /* prepare a fake BAM sector */
     memset(buf->data, 0, 256);
     memset(buf->data + BAM_OFFSET_NAME - 2, 0xa0, BAM_A0_AREA_SIZE);

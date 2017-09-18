@@ -292,6 +292,8 @@ static inline void ieee488_DataTalk(void) {
   ieee488_TE75160 = TE_TALK;
 }
 #else
+#ifndef __AVR_ATmega328P__
+
 static inline uint8_t ieee488_Data(void)            { return ~IEEE_D_PIN;  }
 static inline void    ieee488_SetData(uint8_t data) { IEEE_D_PORT = ~data; }
 
@@ -307,6 +309,17 @@ static inline void ieee488_DataTalk(void) {
   IEEE_D_DDR  = 0xFF;                   // data lines as output
   ieee488_TE75160 = TE_TALK;
 }
+#else 
+static uint8_t ieee488_Data(void)            { return 0;  }
+static void    ieee488_SetData(uint8_t data) {  }
+
+static void ieee488_DataListen(void) {
+}
+
+
+static void ieee488_DataTalk(void) {
+}
+#endif
 #endif // #ifdef IEEE_PIN_D7
 
 /* --------------------------------------------------------------------------------------
@@ -363,10 +376,12 @@ static inline void ieee488_SetDAV(bool x) {
 
 
 static inline void ieee488_SetTE(bool x) {
+#ifndef __AVR_ATmega328P__
   if (x)
     IEEE_PORT_TE |=  _BV(IEEE_PIN_TE);
   else
     IEEE_PORT_TE &= ~_BV(IEEE_PIN_TE);
+#endif
 }
 
 void ieee488_CtrlPortsListen(void) {
@@ -450,7 +465,9 @@ void ieee488_Init(void) {
   device_address = device_hw_address();
   ieee488_InitDC();
   ieee488_SetDC(DC_DEVICE);
+#ifndef __AVR_ATmega328P__
   IEEE_DDR_TE  |= _BV(IEEE_PIN_TE);             // TE  as output
+#endif
   IEEE_DDR_ATN &= ~_BV(IEEE_PIN_ATN);           // ATN as input
   ieee488_DataListen();
   ieee488_CtrlPortsListen();

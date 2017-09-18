@@ -1020,13 +1020,17 @@ static void parse_getpartition(void) {
   part -= 1;
 
   /* Create partition info */
+  #ifdef CONFIG_HAVE_D64  
   if (partition[part].fop == &d64ops) {
     /* Use type of mounted image as partition type */
     *ptr++ = partition[part].imagetype & D64_TYPE_MASK;
   } else {
+  #endif
     /* Use native for anything else */
     *ptr++ = 1;
+  #ifdef CONFIG_HAVE_D64  
   }
+  #endif
   *ptr++ = 0xe2; // 1.6MB disk - "reserved" for HD
 
   *ptr++ = part+1;

@@ -188,7 +188,8 @@ imgtype_t check_imageext(uint8_t *name) {
 
   if (ext == NULL)
     return IMG_UNKNOWN;
-
+#ifdef CONFIG_HAVE_D64
+    
   f = toupper(*++ext);
   s = toupper(*++ext);
   t = toupper(*++ext);
@@ -200,7 +201,7 @@ imgtype_t check_imageext(uint8_t *name) {
          (t == '1'))           ||
         (s == '8' && (t == '0' || t == '2')))   // D80, D82
       return IMG_IS_DISK;
-
+#endif
  return IMG_UNKNOWN;
 }
 
@@ -1065,11 +1066,13 @@ uint8_t fat_chdir(path_t *path, cbmdirent_t *dent) {
         parse_error(res,1);
         return 1;
       }
-
+#ifdef CONFIG_HAVE_D64
       if (d64_mount(path, dent->pvt.fat.realname))
         return 1;
+      
       partition[path->part].fop = &d64ops;
-
+#endif
+      
       return 0;
     }
   }
@@ -1435,7 +1438,9 @@ void fatops_init(uint8_t preserve_path) {
   }
 
   /* Invalidate some caches */
+#ifdef CONFIG_HAVE_D64  
   d64_invalidate();
+#endif
   p00cache_invalidate();
 
 #ifndef HAVE_HOTPLUG

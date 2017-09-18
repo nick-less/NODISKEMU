@@ -69,7 +69,14 @@ else ifeq ($(MCU),atmega1284p)
   EFUSE = 0xfd
   HFUSE = 0xd2
   LFUSE = 0xe7
+else ifeq ($(MCU),atmega328p)
+  BINARY_LENGTH = 0xf000
+  EFUSE = 0xfd
+  HFUSE = 0xd2
+  LFUSE = 0xe7
 else
+
+
 .PHONY: nochip
 nochip:
 	@echo '=============================================================='

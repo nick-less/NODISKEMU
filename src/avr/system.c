@@ -91,7 +91,7 @@ void system_init_early(void) {
                : "I" (_SFR_IO_ADDR(MCUCR))
                : "r24"
                );
-#elif defined __AVR_ATmega128__ || defined __AVR_ATmega1281__
+#elif defined __AVR_ATmega128__ || defined __AVR_ATmega1281__ || defined __AVR_ATmega328P__
   /* Just assume that JTAG doesn't hurt us on the m128 */
 #else
 #  error Unknown chip!

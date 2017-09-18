@@ -49,15 +49,25 @@ HEXFORMAT = ihex
 TARGET = $(OBJDIR)/NODISKEMU
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC  = buffers.c fatops.c fileops.c main.c errormsg.c
-SRC += doscmd.c ff.c d64ops.c diagnose.c
-SRC += eeprom-conf.c parser.c utils.c led.c diskio.c
+SRC  = buffers.c fileops.c main.c errormsg.c
+SRC += doscmd.c ff.c fatops.c diagnose.c
+SRC += eeprom-conf.c parser.c utils.c diskio.c
 SRC += timer.c $(CONFIG_ARCH)/arch-timer.c $(CONFIG_ARCH)/spi.c
 SRC += $(CONFIG_ARCH)/system.c
 
 ifneq ($(CONFIG_NO_SD),y)
   SRC += sdcard.c
 endif
+
+ifneq ($(CONFIG_NO_D64),y)
+  SRC += d64ops.c
+endif
+
+
+ifneq ($(CONFIG_NO_LED),y)
+  SRC += led.c
+endif
+
 
 ifneq ($(CONFIG_HAVE_IEC),y)
   ifneq ($(CONFIG_HAVE_IEEE),y)
@@ -216,7 +226,7 @@ include scripts/$(CONFIG_ARCH)/variables.mk
 #    -adhlns...: create assembler listing
 CFLAGS = -g$(DEBUG)
 CFLAGS += $(CDEFS)
-CFLAGS += -O$(OPT) -fno-strict-aliasing
+CFLAGS += -O$(OPT) -fno-strict-aliasing -fno-inline-small-functions
 CFLAGS += -Wall -Wstrict-prototypes
 #CFLAGS += -Wa,-adhlns=$(OBJDIR)/$(<:.c=.lst)
 CFLAGS += -I$(OBJDIR) -Isrc -Isrc/$(CONFIG_ARCH)
