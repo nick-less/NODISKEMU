@@ -68,6 +68,18 @@ iec_data_t iec_data;
 /* ------------------------------------------------------------------------- */
 /*  Very low-level bus handling                                              */
 /* ------------------------------------------------------------------------- */
+void iec_delay_us(double delay) {
+  _delay_us(delay);
+}
+
+
+void iec_set_clock_prescaler(uint8_t bus) {
+  uart_flush();
+  clock_prescale_set(clock_div_2);    // Set clock to 16/2 =  8 MHz
+  timer_init();
+  uart_init();
+  spi_set_speed(SPI_SPEED_FAST);
+}
 
 /// Debounce IEC input - see E9C0
 static iec_bus_t iec_debounced(void) {

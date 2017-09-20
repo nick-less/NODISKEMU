@@ -54,7 +54,42 @@
 
 #ifdef HAVE_DUAL_INTERFACE
   uint8_t active_bus = IEEE488;
+  struct bus_functions_t bus_functions[] = {
+    {
+      iec_init,
+      iec_interface_init,
+      iec_set_clock_prescaler,
+      iec_delay_us,
+      iec_mainloop,
+      iec_sleep
+    }, 
+    {
+      ieee488_Init,
+      ieee_interface_init,
+      ieee488_set_clock_prescaler,
+      ieee488_delay_us,
+      ieee_mainloop,
+      ieee488_BusSleep
+    }
+  };
+#else 
+
+uint8_t active_bus = 0;
+struct bus_functions_t bus_functions[] = {
+  {
+    ieee488_Init,
+    ieee_interface_init,
+    0,
+    0,
+    ieee_mainloop,
+    ieee488_BusSleep
+  }
+};
+
 #endif
+
+
+
 
 #if defined(__AVR__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 1))
 int main(void) __attribute__((OS_main));
@@ -122,8 +157,8 @@ int main(void) {
 //    lcd_splashscreen();
 
   for (;;) {
-    bus_interface_init();
-    bus_init();    // needs delay, inits device address with HW settings
+    bus_functions[active_bus].bus_interface_init();
+    bus_functions[active_bus].bus_init();    // needs delay, inits device address with HW settings
     read_configuration(); // may change device address
     /*
     if (menu_system_enabled)
@@ -138,6 +173,6 @@ int main(void) {
 #ifdef UART_DEBUG
     printf("#%02d\r\n", device_address);
 #endif
-    bus_mainloop();
+    bus_functions[active_bus].bus_mainloop();
   }
 }

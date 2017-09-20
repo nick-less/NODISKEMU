@@ -151,6 +151,18 @@ static inline void ieee488_SetNRFD(bool x);
 
 bool have_enc28j60;
 
+void ieee488_set_clock_prescaler(uint8_t bus) {
+  uart_flush();
+  clock_prescale_set(clock_div_1);    // Set clock to        16 MHz
+  timer_init();
+  uart_init();
+  spi_set_speed(SPI_SPEED_FAST);
+}
+void ieee488_delay_us(double delay) {
+  _delay_us(delay*2);
+}
+
+
 void ieee488_InitIFC(void) {
   // Try to read ENC28J60's die revision to detect the chip
   // If it's not present, use port for IFC line instead of ETINT

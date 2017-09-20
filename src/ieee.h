@@ -28,7 +28,9 @@
 #ifndef IEEE_H
 #define IEEE_H
 
-
+void ieee_interface_init(void);
+void ieee488_set_clock_prescaler(uint8_t bus);
+void ieee488_delay_us(double delay);
 void ieee488_Init(void);
 void ieee488_BusSleep(bool sleep);
 void ieee_mainloop(void);

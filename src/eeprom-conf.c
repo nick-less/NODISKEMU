@@ -217,7 +217,9 @@ void write_configuration(void) {
   eeprom_write_byte(&storedconfig.imagedirs, image_as_dir);
   memset(rom_filename+ustrlen(rom_filename), 0, sizeof(rom_filename)-ustrlen(rom_filename));
   eeprom_write_block(rom_filename, &storedconfig.romname, ROM_NAME_LENGTH);
+#ifdef HAVE_DUAL_INTERFACE
   eeprom_write_byte(&storedconfig.active_bus, active_bus);
+#endif
 #ifdef CONFIG_HW_ADDR_OR_BUTTONS
   eeprom_write_byte(&storedconfig.menu_system_enabled, menu_system_enabled);
 #endif

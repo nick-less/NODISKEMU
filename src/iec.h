@@ -64,6 +64,12 @@ typedef struct {
 
 extern iec_data_t iec_data;
 
+void iec_interface_init(void);
+
+void iec_delay_us(double delay);
+void iec_set_clock_prescaler(uint8_t bus);
+  
+
 uint8_t iec_check_atn(void);
 void iec_init(void);
 void iec_mainloop(void);

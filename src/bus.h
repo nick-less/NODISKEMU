@@ -36,11 +36,20 @@
 
 extern uint8_t device_address;
 
-enum { IEC, IEEE488 };
+enum { IEC=0, IEEE488=1 };
 
-void iec_interface_init(void);
-void ieee_interface_init(void);
 
+struct bus_functions_t {
+  void (*bus_init)(void);
+  void (*bus_interface_init)(void);
+  void (*bus_prescale)(void);
+  void (*bus_delay_ms)(double);
+  void (*bus_mainloop)(void);
+  void (*bus_sleep)(bool);
+};
+
+
+/*
 #ifdef HAVE_DUAL_INTERFACE
 extern uint8_t active_bus;
 
@@ -132,5 +141,7 @@ static FUNC_INLINE void bus_sleep(bool sleep) {
 #endif // CONFIG_HAVE_IEEE
 #endif // CONFIG_HAVE_IEC
 #endif // HAVE_DUAL_INTERFACE
+*/
+
 
 #endif
