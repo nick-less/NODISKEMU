@@ -106,17 +106,18 @@ int main(void) {
   /* Due to an erratum in the LPC17xx chips anything that may change */
   /* peripheral clock scalers must come before system_init_late()    */
   uart_init();
+  
 #ifndef SPI_LATE_INIT
   spi_init(SPI_SPEED_SLOW);
 #endif
   timer_init();
-
+  
 //  i2c_init();
 
   /* Second part of system initialisation, switches to full speed on ARM */
   system_init_late();
   enable_interrupts();
-
+  
   /* Prompt software name and version string */
   uart_puts_P(PSTR("\r\nNODISKEMU " VERSION "\r\n"));
 
@@ -128,8 +129,12 @@ int main(void) {
   /* should be placed after system_init_late() */
   rtc_init();    // accesses I2C
   disk_init();   // accesses card
-  read_configuration(); // restores configuration, may change device address
 
+  transmitString ("disk\n");
+  
+  read_configuration(); // restores configuration, may change device address
+  transmitString ("conf\n");
+  
   filesystem_init(0);
   // FIXME: change_init();
 
@@ -155,8 +160,11 @@ int main(void) {
 
 //  if (menu_system_enabled)
 //    lcd_splashscreen();
+transmitString ("preloop\n");
 
   for (;;) {
+    transmitString ("loop\n");
+    
     bus_functions[active_bus].bus_interface_init();
     bus_functions[active_bus].bus_init();    // needs delay, inits device address with HW settings
     read_configuration(); // may change device address
@@ -174,5 +182,8 @@ int main(void) {
     printf("#%02d\r\n", device_address);
 #endif
     bus_functions[active_bus].bus_mainloop();
+
+    transmitString ("end loop\n");
+    
   }
 }

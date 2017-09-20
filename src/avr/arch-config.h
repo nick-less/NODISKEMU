@@ -1294,9 +1294,9 @@ static inline void iec_interrupts_init(void) {
 #  define IEEE_PORT_EOI         PORTC
 #  define IEEE_DDR_EOI          DDRC
 #  define IEEE_PIN_EOI          PC4
-#  define IEEE_D_PIN            PINA    /* Data */
-#  define IEEE_D_PORT           PORTA
-#  define IEEE_D_DDR            DDRA
+//#  define IEEE_D_PIN            PINA    /* Data */
+//#  define IEEE_D_PORT           PORTA
+//#  define IEEE_D_DDR            DDRA
 /* IFC is only used if ethernet chip is not detected because
    the hardware shares the port pin with ETINT ethernet interrupt */
    static void ieee_interface_init(void) {
@@ -1308,10 +1308,10 @@ static inline void iec_interrupts_init(void) {
   
 /*** User interface ***/
 /* Button NEXT changes to the next disk image and enables sleep mode (held) */
-#  define BUTTON_NEXT _BV(PC4)
+#  define BUTTON_NEXT _BV(PC5)
 
 /* Button PREV changes to the previous disk image */
-#  define BUTTON_PREV _BV(PC3)
+#  define BUTTON_PREV _BV(PC6)
 
 /* Read the raw button state - a depressed button should read as 0 */
 static inline rawbutton_t buttons_read(void) {
@@ -1324,13 +1324,14 @@ static inline void buttons_init(void) {
 }
 
 /* Software I2C lines for the RTC and display */
+/*
 #  define SOFTI2C_PORT    PORTC
 #  define SOFTI2C_PIN     PINC
 #  define SOFTI2C_DDR     DDRC
 #  define SOFTI2C_BIT_SCL PC4
 #  define SOFTI2C_BIT_SDA PC5
 #  define SOFTI2C_DELAY   6
-
+*/
 
 /*** board-specific initialisation ***/
 /* Currently used on uIEC/CF and uIEC/SD only */

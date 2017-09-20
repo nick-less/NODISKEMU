@@ -2113,13 +2113,12 @@ void parse_doscommand(void) {
 
   /* Send command to display */
   display_doscommand(command_length, command_buffer);
-
   /* MD/CD/RD clash with other commands, so they're checked first */
   if (command_buffer[0] != 'X' && command_buffer[1] == 'D') {
     parse_dircommand();
     return;
   }
-
+  
 #ifdef ENABLE_DOSCOMMANDS
 
   switch (command_buffer[0]) {

@@ -567,8 +567,9 @@ void ieee488_ListenLoop(uint8_t action, uint8_t sa) {
     return;
   }
 
-  if (sa == 15)
+  if (sa == 15) {
     command_received = true;
+  }
 
 #ifdef UART_DEBUG
   printf("LL %d\r\n", sa);
@@ -751,7 +752,7 @@ void ieee488_Unlisten(void) {
     parse_doscommand();
   } else if (open_active) {
     datacrc = 0xffff;                   // filename in command buffer
-    file_open(open_sa);
+//    file_open(open_sa);
   }
   ieee488_ListenActive = command_received = open_active = false;
   command_length = 0;
@@ -785,7 +786,9 @@ void handle_ieee488(void) {
   uint8_t sa;                           // secondary address from cmd byte
 
   // If IFC was received during last iteration, reset bus interface now
-  if (ieee488_IFCreceived || ieee488_CheckIFC()) ieee488_ProcessIFC();
+  if (ieee488_IFCreceived || ieee488_CheckIFC()) {
+    ieee488_ProcessIFC();
+  }
 
   // Return to scheduler if ATN is inactive
   if (!ieee488_ATN_received) return;
@@ -803,7 +806,9 @@ void handle_ieee488(void) {
 
     ieee488_SetNDAC(0);
     ieee488_SetNRFD(1);                   // Say ready for data
-    if (ieee488_TE75160 != TE_LISTEN) ieee488_DataListen();
+    if (ieee488_TE75160 != TE_LISTEN) {
+      ieee488_DataListen();
+    }
 
     while (ieee488_DAV()) {               // Wait for DAV low
       if (ieee488_ATN_received ||         // new ATN cycle?
@@ -928,7 +933,11 @@ void ieee_mainloop(void) {
   ieee488_InitIFC();
   set_error(ERROR_DOSVERSION);
   for (;;) {
-    for (uint8_t i = BUS_RATIO; i != 0; i--) handle_ieee488();
+    for (uint8_t i = BUS_RATIO; i != 0; i--) {
+      handle_ieee488();
+      transmitString (".");
+    }
+    transmitString ("\n");
     // We are allowed to do here whatever we want for any time long
     // as long as the ATN interrupt stays enabled
     handle_card_changes();

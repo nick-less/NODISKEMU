@@ -101,45 +101,6 @@ static FUNC_INLINE void bus_sleep(bool sleep) {
     ieee488_BusSleep(sleep);
 }
 #else
-#ifdef CONFIG_HAVE_IEC
-#define active_bus IEC
-
-static FUNC_INLINE void bus_interface_init(void) {
-  iec_interface_init();
-}
-
-static FUNC_INLINE void bus_init(void) {
-  iec_init();
-}
-
-static FUNC_INLINE void bus_mainloop(void) {
-  iec_mainloop();
-}
-
-static FUNC_INLINE void bus_sleep(bool sleep) {
-  iec_sleep(sleep);
-}
-#else
-#ifdef CONFIG_HAVE_IEEE
-#define active_bus IEEE488
-
-static FUNC_INLINE void bus_interface_init(void) {
-  ieee_interface_init();
-}
-
-static FUNC_INLINE void bus_init(void) {
-  ieee488_Init();
-}
-
-static FUNC_INLINE void bus_mainloop(void) {
-  ieee_mainloop();
-}
-
-static FUNC_INLINE void bus_sleep(bool sleep) {
-  ieee488_BusSleep(sleep);
-}
-#endif // CONFIG_HAVE_IEEE
-#endif // CONFIG_HAVE_IEC
 #endif // HAVE_DUAL_INTERFACE
 */
 

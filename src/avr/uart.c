@@ -131,6 +131,7 @@ void uart_flush(void) {
 }
 
 void uart_puts_P(const char *text) {
+  return transmitString(text);
   uint8_t ch;
 
   while ((ch = pgm_read_byte(text++))) {
@@ -145,7 +146,35 @@ void uart_putcrlf(void) {
 
 static FILE mystdout = FDEV_SETUP_STREAM(ioputc, NULL, _FDEV_SETUP_WRITE);
 
+void transmitByte( unsigned char data )
+{
+	while ( !(UCSR0A & (1<<UDRE0)) )
+		; 			                /* Wait for empty transmit buffer */
+	UDR0 = data; 			        /* Start transmition */
+}
+void transmitString(unsigned char* string)
+{
+  while (*string)
+   transmitByte(*string++);
+}
+
 void uart_init(void) {
+#if CONFIG_HARDWARE_VARIANT == HW_ARDUINO_NANO
+
+UBRR0H = 0;
+UBRR0L = 25;
+
+UCSR0A = 0x00;
+UCSR0B = (1<<RXEN0)|(1<<TXEN0);
+UCSR0C = (1<<USBS0)|(3<<UCSZ00);
+
+
+stdout = &mystdout;
+read_idx  = 0;
+write_idx = 0;
+return;
+#endif
+
   /* Configure serial port */
 #if CONFIG_HARDWARE_VARIANT == HW_PETSDPLUS
    // petSD+ 38400 baud, 8N1
@@ -159,7 +188,8 @@ void uart_init(void) {
 #  if USE_2X
    UCSRA |= (1 << U2X);          /* U2X-mode required */
 #    else
-   UCSRA &= ~(1 << U2X);         /* U2X-not required */
+   // FIXME!! disabled
+   // UCSRA &= ~(1 << U2X);         /* U2X-not required */
 #  endif
 #endif
 
@@ -171,3 +201,4 @@ void uart_init(void) {
   read_idx  = 0;
   write_idx = 0;
 }
+
