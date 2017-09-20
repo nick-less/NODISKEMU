@@ -70,7 +70,7 @@ else ifeq ($(MCU),atmega1284p)
   HFUSE = 0xd2
   LFUSE = 0xe7
 else ifeq ($(MCU),atmega328p)
-  BINARY_LENGTH = 0xf000
+  BINARY_LENGTH = 0x8000
   EFUSE = 0xfd
   HFUSE = 0xd2
   LFUSE = 0xe7
@@ -106,12 +106,12 @@ EXTMEMOPTS =
 # Type: avrdude -c ?
 # to get a full listing.
 #
-AVRDUDE_PROGRAMMER = avrispmkii
+AVRDUDE_PROGRAMMER = arduino
 
 # com1 = serial port. Use lpt1 to connect to parallel port.
-AVRDUDE_PORT = usb    # programmer connected to serial device
+AVRDUDE_PORT = com4    # programmer connected to serial device
 
-AVRDUDE_WRITE_FLASH = -B 1 -U flash:w:$(TARGET).hex
+AVRDUDE_WRITE_FLASH = -b 57600 -B 1 -U flash:w:$(TARGET).hex
 # AVRDUDE_WRITE_EEPROM = -U eeprom:w:$(TARGET).eep
 
 # Allow fuse overrides from the config file

@@ -1152,7 +1152,7 @@ static inline void iec_interrupts_init(void) {
 #  endif
 #elif CONFIG_HARDWARE_VARIANT == HW_ARDUINO_NANO
 
-#define FUNC_INLINE 
+#define FUNC_INLINE inline
 /* ---------- Hardware configuration: Example ---------- */
 /* This is a commented example for most of the available options    */
 /* in case someone wants to build Yet Another[tm] hardware variant. */

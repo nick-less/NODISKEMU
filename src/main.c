@@ -75,7 +75,8 @@ int main(void) {
   spi_init(SPI_SPEED_SLOW);
 #endif
   timer_init();
-  i2c_init();
+
+//  i2c_init();
 
   /* Second part of system initialisation, switches to full speed on ARM */
   system_init_late();
@@ -86,7 +87,7 @@ int main(void) {
 
   /* Internal-only initialisation, called here because it's faster */
   buffers_init();
-  buttons_init();
+// buttons_init();
 
   /* Anything that does something which needs the system clock */
   /* should be placed after system_init_late() */
@@ -109,27 +110,29 @@ int main(void) {
   }
 #endif
 
-  set_busy_led(0);
+  // set_busy_led(0);
 
 #if defined(HAVE_SD)
   /* card switch diagnostic aid - hold down PREV button to use */
-  if (menu_system_enabled && get_key_press(KEY_PREV))
-    board_diagnose();
+//  if (menu_system_enabled && get_key_press(KEY_PREV))
+//    board_diagnose();
 #endif
 
-  if (menu_system_enabled)
-    lcd_splashscreen();
+//  if (menu_system_enabled)
+//    lcd_splashscreen();
 
   for (;;) {
     bus_interface_init();
     bus_init();    // needs delay, inits device address with HW settings
     read_configuration(); // may change device address
+    /*
     if (menu_system_enabled)
       lcd_refresh();
     else {
       lcd_clear();
       lcd_printf("#%d", device_address);
     }
+    */
     /* Unit number may depend on hardware and stored settings */
     /* so present it here at last */
 #ifdef UART_DEBUG
