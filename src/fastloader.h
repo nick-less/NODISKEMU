@@ -86,10 +86,10 @@ void save_dolphin(void);
 
 # ifdef PARALLEL_ENABLED
 extern volatile uint8_t parallel_rxflag;
-static inline void parallel_clear_rxflag(void) { parallel_rxflag = 0; }
+static FUNC_INLINE void parallel_clear_rxflag(void) { parallel_rxflag = 0; }
 # else
 #  define parallel_rxflag 0
-static inline void parallel_clear_rxflag(void) {}
+static FUNC_INLINE void parallel_clear_rxflag(void) {}
 # endif
 
 #endif

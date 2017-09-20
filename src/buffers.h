@@ -165,12 +165,12 @@ void free_buffer(buffer_t *buffer);
 uint8_t free_multiple_buffers(uint8_t flags);
 
 /* Mark a buffer as sticky */
-static void inline stick_buffer(buffer_t *buf) {
+static void stick_buffer(buffer_t *buf) {
   buf->sticky = 1;
 }
 
 /* remove sticky mark */
-static void inline unstick_buffer(buffer_t *buf) {
+static void unstick_buffer(buffer_t *buf) {
   buf->sticky = 0;
 }
 
@@ -189,7 +189,7 @@ extern uint8_t dirty_buffers;
 
 /* Mark a buffer as write-buffer and sticky it */
 // Note: inline function is smaller than external on AVR with gcc 4.8.2
-static inline void mark_write_buffer(buffer_t *buf) {
+static FUNC_INLINE void mark_write_buffer(buffer_t *buf) {
   buf->write = 1;
   stick_buffer(buf);
 }

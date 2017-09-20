@@ -36,7 +36,7 @@ uint8_t crc7update(uint8_t crc, uint8_t data);
 #define crc16_update(crc, data) _crc16_update(crc, data)
 
 /* Calculate a CRC over a block of data - more efficient if inlined */
-static inline uint16_t crc_xmodem_block(uint16_t crc, const uint8_t *data, unsigned int length) {
+static FUNC_INLINE uint16_t crc_xmodem_block(uint16_t crc, const uint8_t *data, unsigned int length) {
   while (length--) {
     crc = _crc_xmodem_update(crc, *data++);
   }

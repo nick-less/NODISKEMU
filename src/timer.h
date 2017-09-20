@@ -41,7 +41,7 @@ extern volatile tick_t ticks;
  *
  * This inline function returns the current system tick count.
  */
-static inline tick_t getticks(void) {
+static FUNC_INLINE tick_t getticks(void) {
   tick_t tmp;
   ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
     tmp = ticks;

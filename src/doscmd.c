@@ -2120,6 +2120,8 @@ void parse_doscommand(void) {
     return;
   }
 
+#ifdef ENABLE_DOSCOMMANDS
+
   switch (command_buffer[0]) {
   case 'B':
     /* Block-Something */
@@ -2198,4 +2200,5 @@ void parse_doscommand(void) {
     set_error(ERROR_SYNTAX_UNKNOWN);
     break;
   }
+#endif
 }

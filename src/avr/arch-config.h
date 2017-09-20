@@ -1074,7 +1074,9 @@ static inline uint8_t device_hw_address(void) {
     addr = 8;
     if (get_key_state(KEY_SEL))  addr += 1;
     if (get_key_state(KEY_NEXT)) addr += 2;
+#ifdef UART_DEBUG
     printf("dhw:%d\r\n", addr);
+#endif
   }
   return addr;
 }
@@ -1149,6 +1151,8 @@ static inline void iec_interrupts_init(void) {
 
 #  endif
 #elif CONFIG_HARDWARE_VARIANT == HW_ARDUINO_NANO
+
+#define FUNC_INLINE 
 /* ---------- Hardware configuration: Example ---------- */
 /* This is a commented example for most of the available options    */
 /* in case someone wants to build Yet Another[tm] hardware variant. */

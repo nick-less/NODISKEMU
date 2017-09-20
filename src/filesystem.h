@@ -35,13 +35,13 @@
 
 #ifdef CONFIG_HAVE_EEPROMFS
 /* initialize both fatops and eefs */
-static inline void filesystem_init(uint8_t preserve_dir) {
+static FUNC_INLINE void filesystem_init(uint8_t preserve_dir) {
   fatops_init(preserve_dir);
   eefsops_init();
 }
 #else
 /* just fatops */
-static inline void filesystem_init(uint8_t preserve_dir) {
+static FUNC_INLINE void filesystem_init(uint8_t preserve_dir) {
   fatops_init(preserve_dir);
 }
 #endif

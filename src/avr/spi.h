@@ -44,7 +44,7 @@ typedef enum { SPIDEV_NONE     = 0,
 void spi_init(spi_speed_t speed);
 
 /* select device */
-static inline void spi_select_device(spi_device_t dev) {
+static FUNC_INLINE void spi_select_device(spi_device_t dev) {
   if (dev & 1)
     sdcard_set_ss(0);
   else
@@ -64,7 +64,7 @@ void spi_tx_byte(uint8_t data);
 void spi_exchange_block(void *data, unsigned int length, uint8_t write);
 
 /* Receive a data block */
-static inline void spi_tx_block(const void *data, unsigned int length) {
+static FUNC_INLINE void spi_tx_block(const void *data, unsigned int length) {
   spi_exchange_block((void *)data, length, 0);
 }
 
@@ -72,7 +72,7 @@ static inline void spi_tx_block(const void *data, unsigned int length) {
 uint8_t spi_rx_byte(void);
 
 /* Receive a data block */
-static inline void spi_rx_block(void *data, unsigned int length) {
+static FUNC_INLINE void spi_rx_block(void *data, unsigned int length) {
   spi_exchange_block(data, length, 1);
 }
 

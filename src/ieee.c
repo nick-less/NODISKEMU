@@ -209,14 +209,14 @@ static inline bool ieee488_CheckIFC(void) {
 
 // IFC not attached, ignored:
 
-static inline void ieee488_InitIFC(void) {}
+static FUNC_INLINE void ieee488_InitIFC(void) {}
 
-static inline uint8_t ieee488_IFC(void) {
+static FUNC_INLINE uint8_t ieee488_IFC(void) {
   return 0xFF;
 }
 
 
-static inline bool ieee488_CheckIFC(void) {
+static FUNC_INLINE bool ieee488_CheckIFC(void) {
   return false;
 }
 #endif // #ifdef IEEE_INPUT_IFC
@@ -224,13 +224,13 @@ static inline bool ieee488_CheckIFC(void) {
 
 // --------------------------------------------------------------------------------------
 
-static inline uint8_t ieee488_ATN(void)  { return IEEE_INPUT_ATN  & _BV(IEEE_PIN_ATN);  }
-static inline uint8_t ieee488_NDAC(void) { return IEEE_INPUT_NDAC & _BV(IEEE_PIN_NDAC); }
-static inline uint8_t ieee488_NRFD(void) { return IEEE_INPUT_NRFD & _BV(IEEE_PIN_NRFD); }
-static inline uint8_t ieee488_DAV(void)  { return IEEE_INPUT_DAV  & _BV(IEEE_PIN_DAV);  }
-static inline uint8_t ieee488_EOI(void)  { return IEEE_INPUT_EOI  & _BV(IEEE_PIN_EOI);  }
+static FUNC_INLINE uint8_t ieee488_ATN(void)  { return IEEE_INPUT_ATN  & _BV(IEEE_PIN_ATN);  }
+static FUNC_INLINE uint8_t ieee488_NDAC(void) { return IEEE_INPUT_NDAC & _BV(IEEE_PIN_NDAC); }
+static FUNC_INLINE uint8_t ieee488_NRFD(void) { return IEEE_INPUT_NRFD & _BV(IEEE_PIN_NRFD); }
+static FUNC_INLINE uint8_t ieee488_DAV(void)  { return IEEE_INPUT_DAV  & _BV(IEEE_PIN_DAV);  }
+static FUNC_INLINE uint8_t ieee488_EOI(void)  { return IEEE_INPUT_EOI  & _BV(IEEE_PIN_EOI);  }
 
-static inline void ieee488_SetEOI(bool x) {
+static FUNC_INLINE void ieee488_SetEOI(bool x) {
   // bus driver changes flow direction of EOI from transmit
   // to receive on ATN, so simulate OC output here
   if (x) {
@@ -255,20 +255,20 @@ static inline void ieee488_SetEOI(bool x) {
    is used for the analog input and handled separetely.
 */
 
-static inline uint8_t ieee488_Data(void);
-static inline void ieee488_SetData(uint8_t data);
-static inline void ieee488_DataListen(void);
-static inline void ieee488_DataTalk(void);
+static FUNC_INLINE uint8_t ieee488_Data(void);
+static FUNC_INLINE void ieee488_SetData(uint8_t data);
+static FUNC_INLINE void ieee488_DataListen(void);
+static FUNC_INLINE void ieee488_DataTalk(void);
 
 #ifdef IEEE_PIN_D7
-static inline void ieee488_SetData(uint8_t data) {
+static FUNC_INLINE void ieee488_SetData(uint8_t data) {
   IEEE_D_PORT &= 0b10000000;
   IEEE_D_PORT |= (~data) & 0b01111111;
   if (data & 128) IEEE_PORT_D7 &= ~_BV(IEEE_PIN_D7);
   else            IEEE_PORT_D7 |=  _BV(IEEE_PIN_D7);
 }
 
-static inline uint8_t ieee488_Data(void) {
+static FUNC_INLINE uint8_t ieee488_Data(void) {
    uint8_t data = IEEE_D_PIN;
    if (bit_is_set(IEEE_INPUT_D7, IEEE_PIN_D7))
       data |= 0b10000000;
@@ -277,14 +277,14 @@ static inline uint8_t ieee488_Data(void) {
    return ~data;
 }
 
-static inline void ieee488_DataListen(void) {
+static FUNC_INLINE void ieee488_DataListen(void) {
   IEEE_D_DDR &= 0b10000000;             // data lines as input
   IEEE_DDR_D7 &= ~_BV(IEEE_PIN_D7);
   ieee488_TE75160 = TE_LISTEN;
 }
 
 
-static inline void ieee488_DataTalk(void) {
+static FUNC_INLINE void ieee488_DataTalk(void) {
   IEEE_D_PORT |= 0b01111111;            // release data lines
   IEEE_D_DDR  |= 0b01111111;            // data lines as output
   IEEE_PORT_D7 |= _BV(IEEE_PIN_D7);
@@ -294,30 +294,44 @@ static inline void ieee488_DataTalk(void) {
 #else
 #ifndef __AVR_ATmega328P__
 
-static inline uint8_t ieee488_Data(void)            { return ~IEEE_D_PIN;  }
-static inline void    ieee488_SetData(uint8_t data) { IEEE_D_PORT = ~data; }
+static FUNC_INLINE uint8_t ieee488_Data(void)            { return ~IEEE_D_PIN;  }
+static FUNC_INLINE void    ieee488_SetData(uint8_t data) { IEEE_D_PORT = ~data; }
 
 
-static inline void ieee488_DataListen(void) {
+static FUNC_INLINE void ieee488_DataListen(void) {
   IEEE_D_DDR  = 0x00;                   // data lines as input
   ieee488_TE75160 = TE_LISTEN;
 }
 
 
-static inline void ieee488_DataTalk(void) {
+static FUNC_INLINE void ieee488_DataTalk(void) {
   IEEE_D_PORT = 0xFF;                   // release data lines
   IEEE_D_DDR  = 0xFF;                   // data lines as output
   ieee488_TE75160 = TE_TALK;
 }
 #else 
-static uint8_t ieee488_Data(void)            { return 0;  }
-static void    ieee488_SetData(uint8_t data) {  }
+static uint8_t ieee488_Data(void) {
+//  bit 7..3 portd, bit 1..0 port B and bit 2 = bit0 port C
+  return ~(((PORTD & 0xf8)) | ((PORTB & 0x03)) | ((PORTC & 0x01)<<2));
+  
+}
+static void    ieee488_SetData(uint8_t data) {  
+  PORTD = (~data & 0xf8) | (PORTD & 0x07);
+  PORTB = (~data & 0x03) | (PORTB & 0xFC);
+  PORTC = (~data & 0x04) | (PORTC & 0xFB) ;
+}
 
 static void ieee488_DataListen(void) {
+  DDRD = 0b00000000 | (DDRD & 0x07);
+  DDRB = 0b00000000 | (DDRB & 0xFC);
+  DDRB = 0b00000000 | (DDRB & ~0x04);
 }
 
 
 static void ieee488_DataTalk(void) {
+  DDRD = 0b11111000 | (DDRD & 0x07);
+  DDRB = 0b00000011 | (DDRB & 0xFC);
+  DDRB = 0b00000100 | (DDRB & ~0x04);
 }
 #endif
 #endif // #ifdef IEEE_PIN_D7
@@ -332,12 +346,12 @@ static void ieee488_DataTalk(void) {
 */
 
 #ifdef IEEE_PORT_DC
-static inline void ieee488_InitDC(void) {
+static FUNC_INLINE void ieee488_InitDC(void) {
   IEEE_DDR_DC |= _BV(IEEE_PIN_DC);      // DC as output
 }
 
 
-static inline void ieee488_SetDC(bool x) {
+static FUNC_INLINE void ieee488_SetDC(bool x) {
   if (x)
     IEEE_PORT_DC |=  _BV(IEEE_PIN_DC);
   else
@@ -345,13 +359,13 @@ static inline void ieee488_SetDC(bool x) {
 }
 
 #else
-static inline void ieee488_InitDC(void)  {}
-static inline void ieee488_SetDC(bool x) {}
+static FUNC_INLINE void ieee488_InitDC(void)  {}
+static FUNC_INLINE void ieee488_SetDC(bool x) {}
 #endif
 
 // --------------------------------------------------------------------------------------
 
-static inline void ieee488_SetNDAC(bool x) {
+static void ieee488_SetNDAC(bool x) {
   if (x)
     IEEE_PORT_NDAC |=  _BV(IEEE_PIN_NDAC);
   else
@@ -359,7 +373,7 @@ static inline void ieee488_SetNDAC(bool x) {
 }
 
 
-static inline void ieee488_SetNRFD(bool x) {
+static void ieee488_SetNRFD(bool x) {
   if (x)
     IEEE_PORT_NRFD |=  _BV(IEEE_PIN_NRFD);
   else
@@ -367,7 +381,7 @@ static inline void ieee488_SetNRFD(bool x) {
 }
 
 
-static inline void ieee488_SetDAV(bool x) {
+static void ieee488_SetDAV(bool x) {
   if (x)
     IEEE_PORT_DAV |=  _BV(IEEE_PIN_DAV);
   else
@@ -375,7 +389,7 @@ static inline void ieee488_SetDAV(bool x) {
 }
 
 
-static inline void ieee488_SetTE(bool x) {
+static void ieee488_SetTE(bool x) {
 #ifndef __AVR_ATmega328P__
   if (x)
     IEEE_PORT_TE |=  _BV(IEEE_PIN_TE);
@@ -406,17 +420,17 @@ void ieee488_CtrlPortsTalk(void) {
 }
 
 // ATN via INT0 interrupt
-static inline void ieee488_EnableAtnInterrupt(void) {
+static FUNC_INLINE void ieee488_EnableAtnInterrupt(void) {
   EIMSK |= _BV(INT0);
 }
 
 
-static inline void ieee488_DisableAtnInterrupt(void) {
+static FUNC_INLINE void ieee488_DisableAtnInterrupt(void) {
   EIMSK &= ~_BV(INT0);
 }
 
 
-static inline void ieee488_InitAtnInterrupt(void) {
+static FUNC_INLINE void ieee488_InitAtnInterrupt(void) {
   IEEE_DDR_ATN &= ~_BV(IEEE_PIN_ATN);   // ATN as input
   IEEE_PORT_ATN |= _BV(IEEE_PIN_ATN);   // Enable pull-up for ATN
   ieee488_DisableAtnInterrupt();
@@ -544,7 +558,9 @@ void ieee488_ListenLoop(uint8_t action, uint8_t sa) {
   if (sa == 15)
     command_received = true;
 
+#ifdef UART_DEBUG
   printf("LL %d\r\n", sa);
+#endif
 
   for (;;) {
     BusSignals = ieee488_RxByte(&c);  // Read byte from IEEE bus
@@ -833,15 +849,21 @@ void handle_ieee488(void) {
     } else if (cmd4 == IEEE_SECONDARY) {  // DATA
       while (!ieee488_ATN());             // Wait for ATN high
       if (ieee488_ListenActive) {
+#ifdef UART_DEBUG
         printf("DTA L %d\r\n", sa);
+#endif
         ieee488_ListenLoop(LL_RECEIVE, sa);
       } else if (ieee488_TalkingDevice) {
+#ifdef UART_DEBUG
         printf("DTA T %d\r\n", sa);
+#endif
         ieee488_TalkLoop(sa);
       }
     } else if (cmd4 == IEEE_CLOSE) {      // CLOSE
       if (ieee488_ListenActive) {
+#ifdef UART_DEBUG
         printf("CLO %d\r\n", sa);
+#endif
         if (sa == 15) {
           free_multiple_buffers(FMB_USER_CLEAN);
           ieee488_TalkingDevice = 0;
@@ -858,7 +880,9 @@ void handle_ieee488(void) {
       while (!ieee488_ATN())              // Wait for ATN high
         if (ieee488_CheckIFC()) return;
       if (ieee488_ListenActive) {
+#ifdef UART_DEBUG
         printf("OPN %d\r\n", sa);
+#endif
         open_active = true;
         open_sa = sa;
         ieee488_ListenLoop(LL_OPEN, sa);

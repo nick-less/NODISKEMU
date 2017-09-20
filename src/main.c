@@ -132,7 +132,9 @@ int main(void) {
     }
     /* Unit number may depend on hardware and stored settings */
     /* so present it here at last */
+#ifdef UART_DEBUG
     printf("#%02d\r\n", device_address);
+#endif
     bus_mainloop();
   }
 }

@@ -44,14 +44,14 @@ void ieee_interface_init(void);
 #ifdef HAVE_DUAL_INTERFACE
 extern uint8_t active_bus;
 
-static inline void bus_interface_init(void) {
+static FUNC_INLINE void bus_interface_init(void) {
   if (active_bus == IEC)
     iec_interface_init();
   else
     ieee_interface_init();
 }
 
-static inline void bus_init(void) {
+static FUNC_INLINE void bus_init(void) {
   if (active_bus == IEC)
     iec_init();
   else
@@ -65,7 +65,7 @@ static inline void bus_init(void) {
 #include "timer.h"
 #include "spi.h"
 
-static inline void set_clock_prescaler(uint8_t bus) {
+static FUNC_INLINE void set_clock_prescaler(uint8_t bus) {
   uart_flush();
   if (active_bus == IEC) clock_prescale_set(clock_div_2);    // Set clock to 16/2 =  8 MHz
   else                   clock_prescale_set(clock_div_1);    // Set clock to        16 MHz
@@ -74,10 +74,10 @@ static inline void set_clock_prescaler(uint8_t bus) {
   spi_set_speed(SPI_SPEED_FAST);
 }
 #else
-static inline void set_clock_prescaler(uint8_t bus) {}
+static FUNC_INLINE void set_clock_prescaler(uint8_t bus) {}
 #endif
 
-static inline void bus_mainloop(void) {
+static FUNC_INLINE void bus_mainloop(void) {
   set_clock_prescaler(active_bus);
   if (active_bus == IEC)
     iec_mainloop();
@@ -85,7 +85,7 @@ static inline void bus_mainloop(void) {
     ieee_mainloop();
 }
 
-static inline void bus_sleep(bool sleep) {
+static FUNC_INLINE void bus_sleep(bool sleep) {
   if (active_bus == IEC)
     iec_sleep(sleep);
   else
@@ -95,38 +95,38 @@ static inline void bus_sleep(bool sleep) {
 #ifdef CONFIG_HAVE_IEC
 #define active_bus IEC
 
-static inline void bus_interface_init(void) {
+static FUNC_INLINE void bus_interface_init(void) {
   iec_interface_init();
 }
 
-static inline void bus_init(void) {
+static FUNC_INLINE void bus_init(void) {
   iec_init();
 }
 
-static inline void bus_mainloop(void) {
+static FUNC_INLINE void bus_mainloop(void) {
   iec_mainloop();
 }
 
-static inline void bus_sleep(bool sleep) {
+static FUNC_INLINE void bus_sleep(bool sleep) {
   iec_sleep(sleep);
 }
 #else
 #ifdef CONFIG_HAVE_IEEE
 #define active_bus IEEE488
 
-static inline void bus_interface_init(void) {
+static FUNC_INLINE void bus_interface_init(void) {
   ieee_interface_init();
 }
 
-static inline void bus_init(void) {
+static FUNC_INLINE void bus_init(void) {
   ieee488_Init();
 }
 
-static inline void bus_mainloop(void) {
+static FUNC_INLINE void bus_mainloop(void) {
   ieee_mainloop();
 }
 
-static inline void bus_sleep(bool sleep) {
+static FUNC_INLINE void bus_sleep(bool sleep) {
   ieee488_BusSleep(sleep);
 }
 #endif // CONFIG_HAVE_IEEE

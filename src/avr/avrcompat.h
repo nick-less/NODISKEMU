@@ -203,4 +203,8 @@
 #  define PD7 7
 #endif
 
+#ifndef FUNC_INLINE 
+
+#endif
+
 #endif /* AVRCOMPAT_H */

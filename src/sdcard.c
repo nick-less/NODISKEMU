@@ -116,7 +116,7 @@ static inline uint32_t swap_word(uint32_t input) {
   return result;
 }
 #else
-static inline uint32_t swap_word(uint32_t input) {
+static FUNC_INLINE uint32_t swap_word(uint32_t input) {
   union {
     uint32_t val32;
     uint8_t  val8[4];

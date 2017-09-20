@@ -45,7 +45,7 @@ typedef int16_t stick_t;
  * of microseconds. DON'T use a variable as parameter because it would cause
  * run-time floating point calculations (slow and huge).
  */
-static inline __attribute__((always_inline)) void start_timeout(uint16_t usecs) {
+static FUNC_INLINE __attribute__((always_inline)) void start_timeout(uint16_t usecs) {
   TCNT0  = 256 - ((float)F_CPU/8000000.0) * usecs;
   TIFR0 |= _BV(TOV0);
 }
@@ -57,7 +57,7 @@ static inline __attribute__((always_inline)) void start_timeout(uint16_t usecs) 
  * (together with start_timeout and TIMEOUT_US) will happen when the
  * specified time has elapsed.
  */
-static inline uint8_t has_timed_out(void) {
+static FUNC_INLINE uint8_t has_timed_out(void) {
   return TIFR0 & _BV(TOV0);
 }
 

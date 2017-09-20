@@ -55,7 +55,7 @@
 
 /* Generate a dummy function if there is no board-specific initialisation */
 #ifndef HAVE_BOARD_INIT
-static inline void board_init(void) {
+static FUNC_INLINE void board_init(void) {
   return;
 }
 #endif

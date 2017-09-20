@@ -50,7 +50,7 @@ void handle_lcd(void);
 bool handle_buttons(void);
 bool menu(void);
 
-static inline void lcd_bootscreen(void) {
+static FUNC_INLINE void lcd_bootscreen(void) {
   lcd_draw_screen(SCRN_SPLASH);
 }
 
@@ -58,14 +58,14 @@ static inline void lcd_bootscreen(void) {
 
 #define menu_system_enabled (0)
 
-static inline void lcd_bootscreen(void) {}
-static inline void lcd_splashscreen(void) {}
-static inline void lcd_draw_screen(uint16_t screen) {}
-static inline void lcd_refresh(void) {}
-static inline void lcd_update_device_addr(void) {}
-static inline void handle_lcd(void) {}
-static inline bool handle_buttons(void) { return false; }
-static inline void lcd_update_disk_status(void) {}
-static inline bool menu(void) { return false; }
+static FUNC_INLINE void lcd_bootscreen(void) {}
+static FUNC_INLINE void lcd_splashscreen(void) {}
+static FUNC_INLINE void lcd_draw_screen(uint16_t screen) {}
+static FUNC_INLINE void lcd_refresh(void) {}
+static FUNC_INLINE void lcd_update_device_addr(void) {}
+static FUNC_INLINE void handle_lcd(void) {}
+static FUNC_INLINE bool handle_buttons(void) { return false; }
+static FUNC_INLINE void lcd_update_disk_status(void) {}
+static FUNC_INLINE bool menu(void) { return false; }
 
 #endif

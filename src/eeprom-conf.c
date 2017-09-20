@@ -154,10 +154,11 @@ void read_configuration(void) {
   } else {
     device_address = stored_sw_addr;
   }
+#ifdef UART_DEBUG
   printf("current hw addr: %d\r\n", current_hw_addr);
   printf("stored  hw addr: %d, stored sw addr: %d\r\n", stored_hw_addr,
       stored_sw_addr);
-
+#endif
   file_extension_mode = eeprom_read_byte(&storedconfig.fileexts);
 
 #ifdef NEED_DISKMUX

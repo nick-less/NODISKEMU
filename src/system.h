@@ -47,12 +47,12 @@ __attribute__((noreturn)) void system_reset(void);
 #ifdef __AVR__
 
 /* Disable interrupts */
-static inline void disable_interrupts(void) {
+static FUNC_INLINE void disable_interrupts(void) {
   cli();
 }
 
 /* Enable interrupts */
-static inline void enable_interrupts(void) {
+static FUNC_INLINE void enable_interrupts(void) {
   sei();
 }
 
