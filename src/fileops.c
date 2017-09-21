@@ -844,6 +844,7 @@ void file_open(uint8_t secondary) {
   set_error(ERROR_OK);
 
   /* Strip 0x0d characters from end of name (C2BD-C2CA) */
+  
   if (command_length > 1) {
     if (command_buffer[command_length-1] == 0x0d)
       command_length -= 1;

@@ -513,8 +513,9 @@ uint8_t ieee488_RxByte(char *c) {
   do {
     ieee488_SetNRFD(1);
     ieee488_SetNDAC(0);
-    if (ieee488_TE75160 != TE_LISTEN)
+    if (ieee488_TE75160 != TE_LISTEN) {
       ieee488_DataListen();
+    }
     do {
       if (ieee488_ATN_received) return RX_ATN;  // ATN became low, abort
       if (ieee488_CheckIFC())   return RX_IFC;
@@ -540,8 +541,9 @@ uint8_t ieee488_RxByte(char *c) {
 
 void RxChar(char c) {
   // Receive commands and filenames
-  if (command_length < CONFIG_COMMAND_BUFFER_SIZE)
+  if (command_length < CONFIG_COMMAND_BUFFER_SIZE) {
     command_buffer[command_length++] = c;
+  }
 }
 
 
@@ -576,16 +578,17 @@ void ieee488_ListenLoop(uint8_t action, uint8_t sa) {
     command_received = true;
   }
 
-#ifdef UART_DEBUG
-  printf("LL %d\r\n", sa);
-#endif
+  uart_print("LL ");uart_puthex(sa); uart_putc('\n');
 
   for (;;) {
     BusSignals = ieee488_RxByte(&c);  // Read byte from IEEE bus
 
-    if (BusSignals == RX_ATN || BusSignals == RX_IFC)
+    if (BusSignals == RX_ATN || BusSignals == RX_IFC) {
       return; // ATN received, abort
-    if (ieee488_CheckIFC()) return;
+    }
+    if (ieee488_CheckIFC()) {
+      return;
+    }
 
     if (action == LL_OPEN || command_received) {
       RxChar(c);
@@ -611,11 +614,15 @@ void ieee488_ListenLoop(uint8_t action, uint8_t sa) {
     uart_puthex(c); uart_putc(' ');
 #endif
 
-    if (buf->lastused < buf->position) buf->lastused = buf->position;
+    if (buf->lastused < buf->position) {
+      buf->lastused = buf->position;
+    }
     buf->position++;
 
     // Mark buffer for flushing if position wrapped
-    if (buf->position == 0) buf->mustflush = 1;
+    if (buf->position == 0) {
+      buf->mustflush = 1;
+    }
 
     // REL files must be syncronized on EOI
     if (buf->recordlen && BusSignals == RX_EOI) {

@@ -36,6 +36,8 @@ volatile enum diskstates disk_state;
 
 uint32_t drive_config;
 
+
+
 /* This function calculates the default drive configuration. */
 /* Its result is static after compilation, but doing this in */
 /* C in less messy than doing it with the preprocessor.      */

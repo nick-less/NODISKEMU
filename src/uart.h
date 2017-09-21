@@ -31,14 +31,14 @@
 #ifdef CONFIG_UART_DEBUG
 
 #include "progmem.h"
-
+void uart_print(unsigned char* string);
 void uart_init(void);
 unsigned char uart_getc(void);
-void uart_putc(char c);
+void uart_putc(unsigned char c);
 void uart_puthex(uint8_t num);
 void uart_trace(void *ptr, uint16_t start, uint16_t len);
 void uart_flush(void);
-void uart_puts_P(const char *text);
+void uart_puts_P(char *text);
 void uart_putcrlf(void);
 
 #ifdef __AVR__

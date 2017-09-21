@@ -1467,8 +1467,9 @@ uint8_t image_unmount(uint8_t part) {
 
   /* call D64 unmount function to handle BAM refcounting etc. */
   // FIXME: ops entry?
-  if (partition[part].fop == &d64ops)
+  if (partition[part].fop == &d64ops) {
     d64_unmount(part);
+  }
 
   if (display_found) {
     /* Send current path to display */

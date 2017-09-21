@@ -42,6 +42,8 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <stdbool.h>
+
 /* Include avrcompat.h to get the PA0..PD7 macros on 1284P */
 #include "avrcompat.h"
 
@@ -1152,6 +1154,7 @@ static inline void iec_interrupts_init(void) {
 #  endif
 #elif CONFIG_HARDWARE_VARIANT == HW_ARDUINO_NANO
 
+#define DEBUG_BUS_DATA 1
 #define FUNC_INLINE inline
 /* ---------- Hardware configuration: Example ---------- */
 /* This is a commented example for most of the available options    */
@@ -1201,7 +1204,7 @@ static inline uint8_t sdcard_wp(void) {
 /*** Device address selection ***/
 /* device_hw_address() returns the hardware-selected device address */
 static inline uint8_t device_hw_address(void) {
-  return 8 ;
+  return CONFIG_DEFAULT_ADDR;
 }
 
 /* Configure hardware device address pins */
@@ -1248,6 +1251,7 @@ static inline void iec_interrupts_init(void) {
   PCMSK0 = _BV(PCINT0);
   PCIFR |= _BV(PCIF0);
 }
+
 
 /* CLK interrupt (not required) */
 /* Dreamload requires interrupts for both the ATN and CLK lines. If both are served by */

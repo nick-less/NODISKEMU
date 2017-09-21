@@ -47,7 +47,7 @@ uint8_t txbuf[1 << 8];
 volatile uint16_t read_idx;
 volatile uint16_t write_idx;
 
-void uart_putc(char c) {
+void uart_putc_disabled_org(char c) {
   uint16_t t=(write_idx+1) & (sizeof(txbuf)-1);
 #ifndef CONFIG_DEADLOCK_ME_HARDER // :-)
   UCSRB &= ~ _BV(UDRIE);   // turn off RS232 irq
@@ -130,8 +130,7 @@ void uart_flush(void) {
   while (read_idx != write_idx) ;
 }
 
-void uart_puts_P(const char *text) {
-  return transmitString(text);
+void uart_puts_P( char *text) {
   uint8_t ch;
 
   while ((ch = pgm_read_byte(text++))) {
@@ -146,33 +145,31 @@ void uart_putcrlf(void) {
 
 static FILE mystdout = FDEV_SETUP_STREAM(ioputc, NULL, _FDEV_SETUP_WRITE);
 
-void transmitByte( unsigned char data )
-{
-	while ( !(UCSR0A & (1<<UDRE0)) )
-		; 			                /* Wait for empty transmit buffer */
-	UDR0 = data; 			        /* Start transmition */
+void uart_putc( unsigned char data ) {
+	while ( !(UCSR0A & (1<<UDRE0)) );  
+	UDR0 = data; 			        
 }
-void transmitString(unsigned char* string)
-{
-  while (*string)
-   transmitByte(*string++);
+
+void uart_print( unsigned char* s) {
+  while (*s) {
+    uart_putc(*s++);
+  }
 }
 
 void uart_init(void) {
 #if CONFIG_HARDWARE_VARIANT == HW_ARDUINO_NANO
+    UBRR0H = 0;
+    UBRR0L = 25;
 
-UBRR0H = 0;
-UBRR0L = 25;
-
-UCSR0A = 0x00;
-UCSR0B = (1<<RXEN0)|(1<<TXEN0);
-UCSR0C = (1<<USBS0)|(3<<UCSZ00);
+    UCSR0A = 0x00;
+    UCSR0B = (1<<RXEN0)|(1<<TXEN0);
+    UCSR0C = (1<<USBS0)|(3<<UCSZ00);
 
 
-stdout = &mystdout;
-read_idx  = 0;
-write_idx = 0;
-return;
+    stdout = &mystdout;
+    read_idx  = 0;
+    write_idx = 0;
+    return;
 #endif
 
   /* Configure serial port */
