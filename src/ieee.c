@@ -128,6 +128,12 @@ static inline void ieee488_SetNDAC(bool x);
 static inline void ieee488_SetNRFD(bool x);
 
 
+extern volatile bool ieee488_ATN_received;
+
+ISR (INT0_vect) {
+  ieee488_ATN_received=1;
+}
+
 /* --------------------------------------------------------------------------------------
    IFC handling
 
@@ -324,8 +330,7 @@ static FUNC_INLINE void ieee488_DataTalk(void) {
 #else 
 static uint8_t ieee488_Data(void) {
 //  bit 7..3 portd, bit 1..0 port B and bit 2 = bit0 port C
-  return ~(((PORTD & 0xf8)) | ((PORTB & 0x03)) | ((PORTC & 0x01)<<2));
-  
+  return ~(((PIND & 0xf8)) | ((PINB & 0x03)) | ((PINC & 0x01)<<2));
 }
 static void    ieee488_SetData(uint8_t data) {  
   PORTD = (~data & 0xf8) | (PORTD & 0x07);
@@ -835,14 +840,17 @@ void handle_ieee488(void) {
          return;
       }
     }
-
+    
     cmd3   = cmd & 0b11100000;
     cmd4   = cmd & 0b11110000;
     Device = cmd & 0b00011111;
     sa     = cmd & 0b00001111;
 
     uart_puthex(cmd); uart_putc(' ');
-
+    uart_puthex(cmd3); uart_putc(' ');
+    uart_puthex(Device); uart_putc(' ');
+    uart_puthex(device_address); uart_putc('\n');
+    
     if (cmd == IEEE_UNLISTEN)             // UNLISTEN
       ieee488_Unlisten();
     else if (cmd == IEEE_UNTALK)          // UNTALK
@@ -866,21 +874,15 @@ void handle_ieee488(void) {
     } else if (cmd4 == IEEE_SECONDARY) {  // DATA
       while (!ieee488_ATN());             // Wait for ATN high
       if (ieee488_ListenActive) {
-#ifdef UART_DEBUG
-        printf("DTA L %d\r\n", sa);
-#endif
+        uart_print("DTA L ");uart_puthex(sa); uart_putc('\n');
         ieee488_ListenLoop(LL_RECEIVE, sa);
       } else if (ieee488_TalkingDevice) {
-#ifdef UART_DEBUG
-        printf("DTA T %d\r\n", sa);
-#endif
+        uart_print("DTA T ");uart_puthex(sa); uart_putc('\n');
         ieee488_TalkLoop(sa);
       }
     } else if (cmd4 == IEEE_CLOSE) {      // CLOSE
       if (ieee488_ListenActive) {
-#ifdef UART_DEBUG
-        printf("CLO %d\r\n", sa);
-#endif
+        uart_print("CLO ");uart_puthex(sa); uart_putc('\n');
         if (sa == 15) {
           free_multiple_buffers(FMB_USER_CLEAN);
           ieee488_TalkingDevice = 0;
@@ -897,9 +899,7 @@ void handle_ieee488(void) {
       while (!ieee488_ATN())              // Wait for ATN high
         if (ieee488_CheckIFC()) return;
       if (ieee488_ListenActive) {
-#ifdef UART_DEBUG
-        printf("OPN %d\r\n", sa);
-#endif
+        uart_print("OPN ");uart_puthex(sa); uart_putc('\n');
         open_active = true;
         open_sa = sa;
         ieee488_ListenLoop(LL_OPEN, sa);
@@ -935,9 +935,7 @@ void ieee_mainloop(void) {
   for (;;) {
     for (uint8_t i = BUS_RATIO; i != 0; i--) {
       handle_ieee488();
-      transmitString (".");
     }
-    transmitString ("\n");
     // We are allowed to do here whatever we want for any time long
     // as long as the ATN interrupt stays enabled
     handle_card_changes();
