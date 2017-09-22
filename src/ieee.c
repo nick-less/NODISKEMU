@@ -128,11 +128,6 @@ static inline void ieee488_SetNDAC(bool x);
 static inline void ieee488_SetNRFD(bool x);
 
 
-extern volatile bool ieee488_ATN_received;
-
-ISR (INT0_vect) {
-  ieee488_ATN_received=1;
-}
 
 /* --------------------------------------------------------------------------------------
    IFC handling
@@ -353,6 +348,18 @@ static void ieee488_DataTalk(void) {
 #endif
 #endif // #ifdef IEEE_PIN_D7
 
+
+extern volatile bool ieee488_ATN_received;
+
+ISR (INT0_vect) {
+  ieee488_DataListen ();
+  ieee488_CtrlPortsListen();
+  ieee488_SetNRFD(0);
+  ieee488_SetNDAC(1);
+
+  ieee488_ATN_received=1;
+}
+
 /* --------------------------------------------------------------------------------------
    DC (direction control) is an input of the IEEE-488 bus drivers that is
    set dependent on whether the unit is a bus master or a device.
@@ -462,12 +469,14 @@ volatile bool ieee488_TE75160; // bus driver for data lines
 volatile bool ieee488_TE75161; // bus driver for control lines
 
 void ieee488_BusIdle(void) {
-  if (ieee488_TE75161 != TE_LISTEN)             // Assert listen mode
+  if (ieee488_TE75161 != TE_LISTEN) {             // Assert listen mode
     ieee488_CtrlPortsListen();
+    }
   ieee488_SetNDAC(1);                           // NDAC high
   ieee488_SetNRFD(1);                           // NRFD high
-  if (ieee488_TE75160 != TE_LISTEN)
+  if (ieee488_TE75160 != TE_LISTEN) {
     ieee488_DataListen();
+    }
   uart_puts_P(PSTR("idle\r\n"));
 }
 
@@ -582,6 +591,7 @@ void ieee488_ListenLoop(uint8_t action, uint8_t sa) {
 
   for (;;) {
     BusSignals = ieee488_RxByte(&c);  // Read byte from IEEE bus
+  uart_print("c ");uart_puthex(c); uart_putc('\n');
 
     if (BusSignals == RX_ATN || BusSignals == RX_IFC) {
       return; // ATN received, abort
@@ -813,6 +823,7 @@ void handle_ieee488(void) {
   // release NRFD.
 
   for (;;) {
+//        uart_puts_P(PSTR("for\r\n"));
 
     // Fetch all commands sent in the same ATN-low-cycle
 
