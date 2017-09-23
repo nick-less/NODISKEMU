@@ -327,23 +327,27 @@ static uint8_t ieee488_Data(void) {
 //  bit 7..3 portd, bit 1..0 port B and bit 2 = bit0 port C
   return ~(((PIND & 0xf8)) | ((PINB & 0x03)) | ((PINC & 0x01)<<2));
 }
-static void    ieee488_SetData(uint8_t data) {  
+static inline void    ieee488_SetData(uint8_t data) {  
   PORTD = (~data & 0xf8) | (PORTD & 0x07);
   PORTB = (~data & 0x03) | (PORTB & 0xFC);
   PORTC = (~data & 0x04) | (PORTC & 0xFB) ;
 }
 
-static void ieee488_DataListen(void) {
+static inline void ieee488_DataListen(void) {
+  uart_print ("listen\n");
   DDRD = 0b00000000 | (DDRD & 0x07);
   DDRB = 0b00000000 | (DDRB & 0xFC);
   DDRB = 0b00000000 | (DDRB & ~0x04);
+  // even if we dont have a 75160/75161 we need to set this variable
+  ieee488_TE75160 = TE_LISTEN;
 }
 
-
-static void ieee488_DataTalk(void) {
+static inline void ieee488_DataTalk(void) {
   DDRD = 0b11111000 | (DDRD & 0x07);
   DDRB = 0b00000011 | (DDRB & 0xFC);
   DDRB = 0b00000100 | (DDRB & ~0x04);
+  // even if we dont have a 75160/75161 we need to set this variable
+  ieee488_TE75160 = TE_TALK;
 }
 #endif
 #endif // #ifdef IEEE_PIN_D7
@@ -352,11 +356,15 @@ static void ieee488_DataTalk(void) {
 extern volatile bool ieee488_ATN_received;
 
 ISR (INT0_vect) {
+  asm volatile ("cbi 0x08, 0x01"); //pull NRFD low
+  asm volatile ("sbi 0x08, 0x03"); // release NDAC
+  /*
+
+  ieee488_SetNRFD(1);
+  ieee488_SetNDAC(0);
   ieee488_DataListen ();
   ieee488_CtrlPortsListen();
-  ieee488_SetNRFD(0);
-  ieee488_SetNDAC(1);
-
+*/
   ieee488_ATN_received=1;
 }
 
@@ -482,6 +490,8 @@ void ieee488_BusIdle(void) {
 
 
 void ieee488_BusSleep(bool sleep) {
+    uart_puts_P(PSTR("sleep\r\n"));
+
   if (sleep) {
     ieee488_DisableAtnInterrupt();
     ieee488_BusIdle();
@@ -764,7 +774,6 @@ void ieee488_TalkLoop(uint8_t sa) {
   uart_puts_P(PSTR("TA\r\n"));
 }
 
-
 void ieee488_Unlisten(void) {
   uart_puts_P(PSTR("ULN\r\n"));
   ieee488_BusIdle();
@@ -774,7 +783,7 @@ void ieee488_Unlisten(void) {
     parse_doscommand();
   } else if (open_active) {
     datacrc = 0xffff;                   // filename in command buffer
-//    file_open(open_sa);
+    file_open(open_sa);
   }
   ieee488_ListenActive = command_received = open_active = false;
   command_length = 0;
@@ -807,13 +816,31 @@ void handle_ieee488(void) {
   uint8_t Device;                       // device number from cmd byte
   uint8_t sa;                           // secondary address from cmd byte
 
+/*
+while (1) {
+  ieee488_SetNDAC(0);
+  ieee488_SetNRFD(0);        
+  while (ieee488_DAV() && !ieee488_ATN_received);       
+  cmd = ieee488_RxByte(&sa);  
+    uart_puthex(ieee488_ATN_received); uart_putc(' ');
+    uart_puthex(ieee488_ATN()); uart_putc(' ');
+    uart_puthex(ieee488_DAV()); uart_putc(' ');
+    uart_puthex(cmd); uart_putc(' ');
+    uart_puthex(sa); uart_putc('\n');
+    ieee488_ATN_received=0;
+  }
+  */
+
+
   // If IFC was received during last iteration, reset bus interface now
   if (ieee488_IFCreceived || ieee488_CheckIFC()) {
     ieee488_ProcessIFC();
   }
 
   // Return to scheduler if ATN is inactive
-  if (!ieee488_ATN_received) return;
+  if (!ieee488_ATN_received) {
+     return;
+  }
 
   // Reset ATN received flag
   ieee488_ATN_received = false;
@@ -846,7 +873,7 @@ void handle_ieee488(void) {
       }
     }
 
-
+/*
     ieee488_SetNRFD(0);                   // Say not ready for data
     cmd = ieee488_Data();
     ieee488_SetNDAC(1);                   // Say data accepted
@@ -858,17 +885,22 @@ void handle_ieee488(void) {
          return;
       }
     }
-    
+    */
+    ieee488_RxByte(&cmd);  
+
+
+
     cmd3   = cmd & 0b11100000;
     cmd4   = cmd & 0b11110000;
     Device = cmd & 0b00011111;
     sa     = cmd & 0b00001111;
 
+/*
     uart_puthex(cmd); uart_putc(' ');
     uart_puthex(cmd3); uart_putc(' ');
     uart_puthex(Device); uart_putc(' ');
     uart_puthex(device_address); uart_putc('\n');
-    
+  */ 
     if (cmd == IEEE_UNLISTEN)             // UNLISTEN
       ieee488_Unlisten();
     else if (cmd == IEEE_UNTALK)          // UNTALK
@@ -956,9 +988,11 @@ void ieee_mainloop(void) {
     }
     // We are allowed to do here whatever we want for any time long
     // as long as the ATN interrupt stays enabled
+    
     handle_card_changes();
     handle_lcd();
     if (handle_buttons()) break; // switch to IEC bus?
+    
   }
 }
 
