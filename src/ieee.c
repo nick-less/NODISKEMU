@@ -65,7 +65,6 @@
 // -------------------------------------------------------------------------
 //  Global variables
 // -------------------------------------------------------------------------
-
 uint8_t device_address = CONFIG_DEFAULT_ADDR;   // Current device address
 volatile bool ieee488_TE75160;                  // direction set for data lines
 volatile bool ieee488_TE75161;                  // direction set for ctrl lines
@@ -81,7 +80,7 @@ volatile bool ieee488_ATN_received;             // ATN interrupt sets this to tr
 #define DC_BUSMASTER    0
 #define DC_DEVICE       1
 
-// Upper three bit commands with attached device number
+// Upper three bit commands with attached  number
 #define IEEE_LISTEN      0x20    // 0x20 - 0x3E
 #define IEEE_UNLISTEN    0x3F
 #define IEEE_TALK        0x40    // 0x40 - 0x5E
@@ -93,8 +92,8 @@ volatile bool ieee488_ATN_received;             // ATN interrupt sets this to tr
 #define IEEE_OPEN        0xF0
 
 
-static uint8_t ieee488_ListenActive;     // device number
-static uint8_t ieee488_TalkingDevice;    // device number if we are talker
+static uint8_t ieee488_ListenActive;     //  number
+static uint8_t ieee488_TalkingDevice;    //  number if we are talker
 static bool    command_received;
 static bool    open_active;
 static uint8_t open_sa;
@@ -134,7 +133,7 @@ static inline void ieee488_SetNRFD(bool x);
 
    There are three different cases:
 
-   1) the IFC line is completely ignored for devices where it is not
+   1) the IFC line is completely ignored for s where it is not
       attached to the controller
    2) the IFC line is monitored and used to reset things
    3) Special case for the old petSD: the controller is short of availabe
@@ -356,9 +355,9 @@ static inline void ieee488_DataTalk(void) {
 extern volatile bool ieee488_ATN_received;
 
 ISR (INT0_vect) {
+  /*
   asm volatile ("cbi 0x08, 0x01"); //pull NRFD low
   asm volatile ("sbi 0x08, 0x03"); // release NDAC
-  /*
 
   ieee488_SetNRFD(1);
   ieee488_SetNDAC(0);
@@ -370,11 +369,11 @@ ISR (INT0_vect) {
 
 /* --------------------------------------------------------------------------------------
    DC (direction control) is an input of the IEEE-488 bus drivers that is
-   set dependent on whether the unit is a bus master or a device.
+   set dependent on whether the unit is a bus master or a .
 
    DC is attached to the controller on the old petSD but not on the newer
    petSD+ where it is tied to a static level because any petSD is always
-   a device only but never a bus master.
+   a  only but never a bus master.
 */
 
 #ifdef IEEE_PORT_DC
@@ -512,7 +511,7 @@ void ieee488_Init(void) {
   ieee488_ListenActive = ieee488_TalkingDevice = open_sa = 0;
   command_received = open_active = false;
   device_hw_address_init();
-  device_address = device_hw_address();
+  device_address =  device_hw_address();
   ieee488_InitDC();
   ieee488_SetDC(DC_DEVICE);
 #ifndef __AVR_ATmega328P__
@@ -536,26 +535,55 @@ uint8_t ieee488_RxByte(char *c) {
       ieee488_DataListen();
     }
     do {
-      if (ieee488_ATN_received) return RX_ATN;  // ATN became low, abort
+      if (ieee488_ATN()) return RX_ATN;  // ATN became low, abort
       if (ieee488_CheckIFC())   return RX_IFC;
     } while (ieee488_DAV());                    // Wait for DAV low
     // DAV is now low, NDAC must be high in max. 64 ms
     ieee488_SetNRFD(0);
-    if (!ieee488_EOI())
+    if (!ieee488_EOI()) {
       eoi = RX_EOI;
+    }
     *c = ieee488_Data();
   } while (ieee488_DAV());              // If DAV is high again, we've
                                         // seen only a glitch
   ieee488_SetNDAC(1);
 
   do {
-    if (ieee488_ATN_received) return RX_ATN;
+    if (ieee488_ATN()) return RX_ATN;
     if (ieee488_CheckIFC())   return RX_IFC;
   } while (!ieee488_DAV());             // wait for DAV high
 
   ieee488_SetNDAC(0);
   return eoi;
 }
+
+uint8_t ieee488_RxByte(char *c) {
+  uint8_t eoi = RX_DATA;
+
+  do {
+    ieee488_SetNRFD(1);
+    ieee488_SetNDAC(0);
+    do {
+    } while (ieee488_DAV());                    // Wait for DAV low
+    // DAV is now low, NDAC must be high in max. 64 ms
+    ieee488_SetNRFD(0);
+    if (!ieee488_EOI()) {
+      eoi = RX_EOI;
+    }
+    *c = ieee488_Data();
+  } while (ieee488_DAV());              // If DAV is high again, we've
+                                        // seen only a glitch
+  ieee488_SetNDAC(1);
+
+  do {
+    if (ieee488_ATN()) return RX_ATN;
+    if (ieee488_CheckIFC())   return RX_IFC;
+  } while (!ieee488_DAV());             // wait for DAV high
+
+  ieee488_SetNDAC(0);
+  return eoi;
+}
+
 
 
 void RxChar(char c) {
@@ -811,11 +839,81 @@ void ieee488_ProcessIFC(void) {
 }
 
 
+enum {idle, listen, talk, stay};
+
+struct state_table_t {
+  uint8_t cmd;
+  int state;
+  void (*handle)(uint8_t data);
+};
+
+void handle_data (uint8_t data) {
+  
+}
+void channel_open (uint8_t data) {
+}
+void channel_close (uint8_t data) {
+}
+
+
+struct state_table_t state_table[] = {
+  {0x20, listen, handle_data},
+  {0x3f, idle, handle_data},
+  {0x40, talk, handle_data},
+  {0x5f, idle, handle_data},
+  {0x60, stay, channel_open},
+  {0xe0, stay, channel_close},
+  {0xf0, stay, channel_open},
+
+};
+
+struct state_table_t *find_state(uint8_t cmd) {
+  for (int i=0; i<sizeof (state_table) / sizeof(struct state_table_t);i++) {
+    if (state_table[i].cmd == cmd) {
+      return &state_table[i];
+    }
+  }
+  return NULL;
+}
+
+// catalog  0x3f, 0xf0, 0x24, 0x3f, 0x48, 0x60, 0x5f, 0x28, 0xe0, 0x3f
+
+
+
+//  bool (*match) (uint8_t);
+bool match (uint8_t d) {
+  return 0;
+}
+
+void main_loop (void) {
+  char result, cmd, received;
+  uint8_t target_address;
+  while (1) {
+    ieee488_SetNDAC(0);
+    ieee488_SetNRFD(0);        
+    while (ieee488_DAV() && !ieee488_ATN_received);       
+    result = ieee488_RxByte(&received);  
+
+        target_address = received & 0b00011111;
+        cmd   = received & 0b11100000;
+
+        uart_puthex(result); uart_putc(' ');
+        uart_puthex(ieee488_ATN()); uart_putc(' ');
+        uart_puthex(ieee488_DAV()); uart_putc(' ');
+        uart_puthex(received); uart_putc(' ');
+        uart_puthex(cmd); uart_putc('\n');
+    ieee488_ATN_received=0;
+    }
+
+}
+
 void handle_ieee488(void) {
   uint8_t cmd, cmd3, cmd4;              // Received IEEE-488 command byte
-  uint8_t Device;                       // device number from cmd byte
+  uint8_t Device;                       //  number from cmd byte
   uint8_t sa;                           // secondary address from cmd byte
 
+main_loop();
+return;
 /*
 while (1) {
   ieee488_SetNDAC(0);
@@ -829,9 +927,8 @@ while (1) {
     uart_puthex(sa); uart_putc('\n');
     ieee488_ATN_received=0;
   }
-  */
 
-
+*/
   // If IFC was received during last iteration, reset bus interface now
   if (ieee488_IFCreceived || ieee488_CheckIFC()) {
     ieee488_ProcessIFC();
@@ -899,14 +996,14 @@ while (1) {
     uart_puthex(cmd); uart_putc(' ');
     uart_puthex(cmd3); uart_putc(' ');
     uart_puthex(Device); uart_putc(' ');
-    uart_puthex(device_address); uart_putc('\n');
+    uart_puthex( device_address); uart_putc('\n');
   */ 
     if (cmd == IEEE_UNLISTEN)             // UNLISTEN
       ieee488_Unlisten();
     else if (cmd == IEEE_UNTALK)          // UNTALK
       ieee488_Untalk();
     else if (cmd3 == IEEE_LISTEN) {       // LISTEN
-      if (Device == device_address) {
+      if (Device ==  device_address) {
         uart_puts_P(PSTR("LSN\r\n"));
         ieee488_ListenActive = Device;
         // Override talk state because we can't be
@@ -914,7 +1011,7 @@ while (1) {
         ieee488_TalkingDevice = 0;
       }
     } else if (cmd3 == IEEE_TALK) {       // TALK
-      if (Device == device_address) {
+      if (Device ==  device_address) {
         uart_puts_P(PSTR("TLK\r\n"));
         ieee488_TalkingDevice = Device;
         // Override listen state because we can't be
