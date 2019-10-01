@@ -1,7 +1,7 @@
 # This may not look like it, but it's a -*- makefile -*-
 #
 # NODISKEMU - SD/MMC to IEEE-488 interface/controller
-# Copyright (C) 2007-2015  Ingo Korb <ingo@akana.de>
+# Copyright (C) 2007-2018  Ingo Korb <ingo@akana.de>
 #
 # NODISKEMU is a fork of sd2iec by Ingo Korb (et al.), http://sd2iec.de
 #
@@ -54,8 +54,20 @@ CONFIG_COMMAND_BUFFER_SIZE=120
 CONFIG_BUFFER_COUNT=32
 CONFIG_MAX_PARTITIONS=2
 CONFIG_RTC_PCF8583=y
+CONFIG_RTC_DSRTC=y
 CONFIG_HAVE_IEEE=y
 CONFIG_HAVE_IEC=y
+CONFIG_LOADER_TURBODISK=y
+CONFIG_LOADER_FC3=y
+CONFIG_LOADER_DREAMLOAD=y
+CONFIG_LOADER_ULOAD3=y
+CONFIG_LOADER_GIJOE=y
+CONFIG_LOADER_EPYXCART=y
+CONFIG_LOADER_GEOS=y
+CONFIG_LOADER_WHEELS=y
+CONFIG_LOADER_NIPPON=y
+CONFIG_LOADER_AR6=y
+CONFIG_LOADER_ELOAD1=y
 # A remote LCD with dedicated controller is not supported because
 # the petSD+ lacks an interrupt port pin for it
 CONFIG_REMOTE_DISPLAY=n
@@ -70,3 +82,4 @@ CONFIG_LFUSE=0xF7
 # This device uses some signal lines either for buttons to control
 # a menu system or to set the device address by jumpers:
 CONFIG_HW_ADDR_OR_BUTTONS=y
+CONFIG_IGNORE_CARD_DETECT=n

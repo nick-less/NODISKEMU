@@ -54,6 +54,14 @@ SRC += doscmd.c ff.c fatops.c diagnose.c
 SRC += eeprom-conf.c parser.c utils.c diskio.c
 SRC += timer.c $(CONFIG_ARCH)/arch-timer.c $(CONFIG_ARCH)/spi.c
 SRC += $(CONFIG_ARCH)/system.c
+# Always include fastloader.c, if only to define detected_loader as FL_NONE
+SRC += fastloader.c
+
+# List any extra directories to look for include files here.
+#     Each directory must be seperated by a space.
+#     Use forward slashes for directory separators.
+#     For a directory that has spaces, enclose it in quotes.
+EXTRAINCDIRS =
 
 ifneq ($(CONFIG_NO_SD),y)
   SRC += sdcard.c
@@ -79,7 +87,11 @@ ifneq ($(CONFIG_HAVE_IEC),y)
 endif
 
 ifeq ($(CONFIG_HAVE_IEC),y)
-  SRC += iec.c fastloader.c
+  SRC += iec.c
+  SRC += fl-ar6.c fl-dolphin.c fl-dreamload.c fl-eload.c
+  SRC += fl-epyxcart.c fl-fc3exos.c fl-geos.c fl-gijoe.c
+  SRC += fl-mmzak.c fl-nippon.c fl-turbodisk.c fl-ulm3.c
+  SRC += fl-n0sdos.c fl-samsjourney.c
 endif
 
 ifeq ($(CONFIG_HAVE_IEEE),y)
@@ -113,12 +125,7 @@ ifdef CONFIG_ADD_ATA
 endif
 
 # Various RTC implementations
-ifeq ($(CONFIG_RTC_DS1307),y)
-  SRC += rtc.c ds1307-3231.c
-  NEED_I2C := y
-endif
-
-ifeq ($(CONFIG_RTC_DS3231),y)
+ifeq ($(CONFIG_RTC_DSRTC),y)
   SRC += rtc.c ds1307-3231.c
   NEED_I2C := y
 endif
@@ -145,6 +152,12 @@ ifeq ($(CONFIG_HARDWARE_VARIANT),8)
   SRC += enc28j60.c
 endif
 
+# petSD+ rev. 2.x boards have a I2C slave for PWM and digital output
+# Include path to shared include file
+ifeq ($(CONFIG_HARDWARE_VARIANT),9)
+  EXTRAINCDIRS += test lcd-i2c-pwm-io
+endif
+
 # Optimization level, can be [0, 1, 2, 3, s].
 #     0 = turn off optimization. s = optimize for size.
 #     (Note: 3 is not always the best optimization level. See avr-libc FAQ.)
@@ -157,13 +170,6 @@ OPT = s
 #     AVR Studio 4.10 requires dwarf-2.
 #     AVR [Extended] COFF format requires stabs, plus an avr-objcopy run.
 DEBUG = dwarf-2
-
-
-# List any extra directories to look for include files here.
-#     Each directory must be seperated by a space.
-#     Use forward slashes for directory separators.
-#     For a directory that has spaces, enclose it in quotes.
-EXTRAINCDIRS =
 
 
 # Compiler flag to set the C Standard level.
@@ -246,6 +252,7 @@ endif
 #             and function names needs to be present in the assembler source
 #             files -- see avr-libc docs [FIXME: not yet described there]
 ASFLAGS = -Wa,-gstabs -I$(OBJDIR) -Isrc -Isrc/$(CONFIG_ARCH)
+ASFLAGS += $(patsubst %,-I%,$(EXTRAINCDIRS))
 
 
 #---------------- Linker Options ----------------

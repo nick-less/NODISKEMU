@@ -36,6 +36,8 @@
 
 extern uint8_t lcd_x; // 0..LCD_COLS-1
 extern uint8_t lcd_y; // 0..LCD_LINES-1
+extern uint8_t lcd_contrast;
+extern uint8_t lcd_brightness;
 
 void lcd_init(void);
 void lcd_clear(void);
@@ -48,18 +50,22 @@ void lcd_puts_P(const char *progmem_s);
 void lcd_printf_P(const char *fmt, ...);
 void lcd_cursor(bool on);
 void lcd_clrlines(uint8_t from, uint8_t to);
+uint8_t lcd_set_contrast(uint8_t contrast);
+uint8_t lcd_set_brightness(uint8_t contrast);
 
 #else
 
-static FUNC_INLINE void lcd_init(void) {}
-static FUNC_INLINE void lcd_clear(void) {}
-static FUNC_INLINE void lcd_home(void) {}
-static FUNC_INLINE void lcd_locate(uint8_t x, uint8_t y) {}
-static FUNC_INLINE void lcd_send_command(uint8_t cmd) {}
-static FUNC_INLINE void lcd_putc(char c) {}
-static FUNC_INLINE void lcd_puts(const char *s) {}
-static FUNC_INLINE void lcd_puts_P(const char *progmem_s) {}
-static FUNC_INLINE void lcd_printf_P(const char *fmt, ...) {}
-static FUNC_INLINE void lcd_cursor(bool on) {}
-static FUNC_INLINE void lcd_clrlines(uint8_t from, uint8_t to) {}
+static inline void lcd_init(void) {}
+static inline void lcd_clear(void) {}
+static inline void lcd_home(void) {}
+static inline void lcd_locate(uint8_t x, uint8_t y) {}
+static inline void lcd_send_command(uint8_t cmd) {}
+static inline void lcd_putc(char c) {}
+static inline void lcd_puts(const char *s) {}
+static inline void lcd_puts_P(const char *progmem_s) {}
+static inline void lcd_printf_P(const char *fmt, ...) {}
+static inline void lcd_cursor(bool on) {}
+static inline void lcd_clrlines(uint8_t from, uint8_t to) {}
+static inline uint8_t lcd_set_contrast(uint8_t contrast) { return 1; }
+static inline uint8_t lcd_set_brightness(uint8_t contrast) { return 1; }
 #endif

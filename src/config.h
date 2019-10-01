@@ -1,5 +1,5 @@
 /* NODISKEMU - SD/MMC to IEEE-488 interface/controller
-   Copyright (C) 2007-2015  Ingo Korb <ingo@akana.de>
+   Copyright (C) 2007-2018  Ingo Korb <ingo@akana.de>
 
    NODISKEMU is a fork of sd2iec by Ingo Korb (et al.), http://sd2iec.de
 
@@ -54,11 +54,17 @@
 #endif
 
 /* Generate a dummy function if there is no board-specific initialisation */
-#ifndef HAVE_BOARD_INIT
-static FUNC_INLINE void board_init(void) {
+#ifndef HAVE_EARLY_BOARD_INIT
+static inline void early_board_init(void) {
   return;
 }
 #endif
+#ifndef HAVE_LATE_BOARD_INIT
+static inline void late_board_init(void) {
+  return;
+}
+#endif
+
 
 /* ----- Translate CONFIG_ADD symbols to HAVE symbols ----- */
 /* By using two symbols for this purpose it's easier to determine if */
@@ -101,16 +107,14 @@ static FUNC_INLINE void board_init(void) {
 #if defined(CONFIG_RTC_SOFTWARE) || \
     defined(CONFIG_RTC_PCF8583)  || \
     defined(CONFIG_RTC_LPC17XX)  || \
-    defined(CONFIG_RTC_DS3231)   || \
-    defined(CONFIG_RTC_DS1307)
+    defined(CONFIG_RTC_DSRTC)
 #  define HAVE_RTC
 
 /* calculate the number of enabled RTCs */
 #  if defined(CONFIG_RTC_SOFTWARE) + \
       defined(CONFIG_RTC_PCF8583)  + \
       defined(CONFIG_RTC_LPC17XX)  + \
-      defined(CONFIG_RTC_DS3231)   + \
-      defined(CONFIG_RTC_DS1307) > 1
+      defined(CONFIG_RTC_DSRTC)  > 1
 #    define NEED_RTCMUX
 #  endif
 #endif

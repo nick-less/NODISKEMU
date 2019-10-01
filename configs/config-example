@@ -1,7 +1,7 @@
 # This may not look like it, but it's a -*- makefile -*-
 #
 # NODISKEMU - SD/MMC to IEEE-488 interface/controller
-# Copyright (C) 2007-2015  Ingo Korb <ingo@akana.de>
+# Copyright (C) 2007-2018  Ingo Korb <ingo@akana.de>
 #
 # NODISKEMU is a fork of sd2iec by Ingo Korb (et al.), http://sd2iec.de
 #
@@ -171,9 +171,8 @@ CONFIG_MAX_PARTITIONS=2
 CONFIG_RTC_SOFTWARE=y
 #CONFIG_RTC_PCF8583=y
 #CONFIG_RTC_LPC17XX=y
-#   Note: DS3231 and 1307 cannot both be enabled
-#CONFIG_RTC_DS3231=y
-CONFIG_RTC_DS1307=y
+# supports both DS1307 and DS3231
+CONFIG_RTC_DSRTC=y
 
 # I2C display
 CONFIG_REMOTE_DISPLAY=y
@@ -200,3 +199,7 @@ CONFIG_DISPLAY_BUFFER_SIZE=40
 # Default device address 11 doesn't conflict with internal drives
 # configured as 8 as seen on the CBM 8296D
 CONFIG_DEFAULT_ADDR=11
+
+# If the card detect switch is broken, compilation with
+# disabled cart detection is possible:
+CONFIG_IGNORE_CARD_DETECT=n

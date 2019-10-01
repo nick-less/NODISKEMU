@@ -1,5 +1,6 @@
 /* NODISKEMU - SD/MMC to IEEE-488 interface/controller
-   Copyright (C) 2007-2015  Ingo Korb <ingo@akana.de>
+   Copyright (C) 2007-2018  Ingo Korb <ingo@akana.de>
+   Copyright (C) 2015-2018  Nils Eilers <nils.eilers@gmx.de>
 
    NODISKEMU is a fork of sd2iec by Ingo Korb (et al.), http://sd2iec.de
 
@@ -273,8 +274,8 @@ static inline void buttons_init(void) {
 
 /*** board-specific initialisation ***/
 /* Currently used on uIEC/CF and uIEC/SD only */
-//#define HAVE_BOARD_INIT
-//static inline void board_init(void) {
+//#define HAVE_EARLY_BOARD_INIT
+//static inline void early_board_init(void) {
 //  // turn on power LED
 //  DDRG  |= _BV(PG1);
 //  PORTG |= _BV(PG1);
@@ -577,9 +578,9 @@ static inline void buttons_init(void) {
 /* Use diskmux code to optionally turn off second IDE drive */
 #  define NEED_DISKMUX
 
-#  define HAVE_BOARD_INIT
+#  define HAVE_EARLY_BOARD_INIT
 
-static inline void board_init(void) {
+static inline void early_board_init(void) {
   /* Force control lines of the external SRAM high */
   DDRG  = _BV(PG0) | _BV(PG1) | _BV(PG2);
   PORTG = _BV(PG0) | _BV(PG1) | _BV(PG2);
@@ -796,9 +797,9 @@ static inline void buttons_init(void) {
   PORTG |= BUTTON_NEXT | BUTTON_PREV;
 }
 
-#  define HAVE_BOARD_INIT
+#  define HAVE_EARLY_BOARD_INIT
 
-static inline void board_init(void) {
+static inline void early_board_init(void) {
   // turn on power LED
   DDRG  |= _BV(PG1);
   PORTG |= _BV(PG1);
@@ -919,12 +920,12 @@ static inline void buttons_init(void) {
 #  define SOFTI2C_BIT_INTRQ     PC2
 #  define SOFTI2C_DELAY         6
 
-#  define HAVE_BOARD_INIT
+#  define HAVE_EARLY_BOARD_INIT
 #  define ENC28J60_CONTROL_PORT PORTC
 #  define ENC28J60_CONTROL_CS   PC4
 #  define SAME_PORT_FOR_IFC_AND_ENC28J60_ETINT
 
-static inline void board_init(void) {
+static inline void early_board_init(void) {
   DDRC  |= _BV(PC4);
   PORTC |= _BV(PC4);       /* Disable  ENC28J60 */
 }
@@ -934,7 +935,9 @@ static inline void board_init(void) {
 /* ---------- Hardware configuration: petSD+ --------- */
 #  define HAVE_SD
 #  define IEC_SLOW_IEEE_FAST
+#ifndef CONFIG_IGNORE_CARD_DETECT
 #  define SD_CHANGE_HANDLER     ISR(PCINT3_vect)
+#endif
 #  define SD_SUPPLY_VOLTAGE (1L<<21)
 
 /* 250 kHz slow, 2 MHz fast */
@@ -946,13 +949,19 @@ static inline void sdcard_interface_init(void) {
   PORTD  |=  _BV(PD5);
   DDRD   &= ~_BV(PD6);            /* write protect  */
   PORTD  |=  _BV(PD6);
+#ifndef CONFIG_IGNORE_CARD_DETECT
   PCMSK3 |=  _BV(PCINT29);        /* card change interrupt */
   PCICR  |=  _BV(PCIE3);
   PCIFR  |=  _BV(PCIF3);
+#endif
 }
 
 static inline uint8_t sdcard_detect(void) {
+#ifdef CONFIG_IGNORE_CARD_DETECT
+  return 1;
+#else
   return (!(PIND & _BV(PD5)));
+#endif
 }
 
 static inline uint8_t sdcard_wp(void) {
@@ -1025,14 +1034,6 @@ static inline __attribute__((always_inline)) void set_busy_led(uint8_t state) {
 #  define IEEE_BIT_TE           _BV(IEEE_PIN_TE)
 #  define IEEE_BIT_IFC          _BV(IEEE_PIN_IFC)
 
-static inline void ieee_interface_init(void) {
-  IEEE_PORT_TE  &= (uint8_t) ~ IEEE_BIT_TE;         // Set TE low
-  IEEE_DDR_TE   |= IEEE_BIT_TE;                     // Define TE  as output
-  IEEE_PORT_ATN |= _BV(IEEE_PIN_ATN);               // Enable pull-up for ATN
-  IEEE_PORT_IFC |= IEEE_BIT_IFC;                    // Enable pull-up for IFC
-  IEEE_DDR_ATN  &= (uint8_t) ~ _BV(IEEE_PIN_ATN);   // Define ATN as input
-  IEEE_DDR_IFC  &= (uint8_t) ~ IEEE_BIT_IFC;        // Define IFC as input
-}
 
 
 static inline void buttons_init(void) {
@@ -1042,7 +1043,7 @@ static inline void buttons_init(void) {
   // disable digitial input register for PA7
   DIDR0 |= _BV(ADC7D);
 
-  // divider 128: 18.432 MHz / 128 = 144 kHz (50 kHz..200 kHz)
+  // divider 128: 16 MHz / 128 = 125 kHz (50 kHz..200 kHz)
   // enable ADC
   ADCSRA |= _BV(ADPS2) | _BV(ADPS1) | _BV(ADPS0) | _BV(ADEN);
 
@@ -1091,6 +1092,8 @@ static inline uint8_t device_hw_address(void) {
 #  define SOFTI2C_BIT_SDA       PC1
 #  define SOFTI2C_DELAY         6
 
+// Definitions for I2C PWM slave on petSD+ 2.x boards
+#  include                      "i2c-lcd-pwm-io-config.h"
 
 #  define LCD_PORT_E            PORTD
 #  define LCD_DDR_E             DDRD
@@ -1109,22 +1112,43 @@ static inline uint8_t device_hw_address(void) {
 
 
 #  ifdef CONFIG_ONBOARD_DISPLAY
-#    define HAVE_BOARD_INIT
+#    define HAVE_EARLY_BOARD_INIT
+#    define HAVE_LATE_BOARD_INIT
 #include "lcd.h"
 #include "diagnose.h"
+#include "timer.h"
 
-static inline void board_init(void) {
-  lcd_init();
-  lcd_bootscreen();
-  buttons_init();
+static inline void early_board_init(void) {
 #ifdef CONFIG_HAVE_IEC
   IEEE_DDR_TE |= _BV(IEEE_PIN_TE);      // TE as output
   IEEE_PORT_TE &= ~_BV(IEEE_PIN_TE);    // TE low (listen mode)
 #endif
-  uint16_t buttons = ADCW;
-  if (buttons > 580 && buttons < 630) board_diagnose();
 }
 
+static inline void late_board_init(void) {
+  lcd_init();
+  lcd_bootscreen();
+  buttons_init();
+  uint16_t buttons = ADCW;
+  if (buttons > 580 && buttons < 630) {
+    board_diagnose();
+  } else if (buttons >= 630 && buttons < 680) {
+    lcd_set_brightness(0xFF);                       // maximum brightness
+    menu_adjust_contrast();
+  }
+}
+
+#include "i2c.h"
+
+static inline void ieee_interface_init(void) {
+  IEEE_PORT_TE  &= (uint8_t) ~ IEEE_BIT_TE;         // Set TE low
+  IEEE_DDR_TE   |= IEEE_BIT_TE;                     // Define TE  as output
+  IEEE_PORT_ATN |= _BV(IEEE_PIN_ATN);               // Enable pull-up for ATN
+  IEEE_PORT_IFC |= IEEE_BIT_IFC;                    // Enable pull-up for IFC
+  IEEE_DDR_ATN  &= (uint8_t) ~ _BV(IEEE_PIN_ATN);   // Define ATN as input
+  IEEE_DDR_IFC  &= (uint8_t) ~ IEEE_BIT_IFC;        // Define IFC as input
+  i2c_write_register(I2C_SLAVE_ADDRESS, IO_IEC, 1); // Enable IEEE-488 bus
+}
 
 #ifdef CONFIG_HAVE_IEC
 #  define IEC_OUTPUTS_NONINVERTED
@@ -1531,6 +1555,12 @@ static inline void iec_interface_init(void) {
   /* exclusive INTx line */
 #    error Implement me!
 #  endif
+#endif
+
+#if CONFIG_HARDWARE_VARIANT == HW_PETSDPLUS
+  // Enable IEC bus. This is done by a wire link inside the adapter cable
+  // for older petSD+ boards without IEC connector
+  i2c_write_register(I2C_SLAVE_ADDRESS, IO_IEC, 0);
 #endif
 }
 

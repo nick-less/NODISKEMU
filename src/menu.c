@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2015 Nils Eilers. All rights reserved.
+ * Copyright (c) 2015, 2017 Nils Eilers. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -461,6 +461,8 @@ static void rom_menu_main(uint8_t y) {
         lcd_printf("Set clock");
       break;
     case 4: lcd_puts_P(PSTR("Select IEC/IEEE-488")); break;
+    case 5: lcd_puts_P(PSTR("Adjust LCD contrast")); break;
+    case 6: lcd_puts_P(PSTR("Adjust brightness")); break;
     default: break;
   }
 }
@@ -484,13 +486,11 @@ void menu_browse_files(void) {
   uint8_t stack_my[MAX_LASTPOS];
   uint8_t pos_stack;
   uint8_t save_active_buffers;
-  uint8_t save_dirty_buffers;
 
   pos_stack = 0;
   memset(stack_mp, 0, sizeof(stack_mp));
   memset(stack_my, 0, sizeof(stack_my));
   save_active_buffers = active_buffers;
-  save_dirty_buffers = dirty_buffers;
 
 start:
   lcd_clear();
@@ -720,7 +720,6 @@ reread:
 
   set_busy_led(false); set_dirty_led(true);
   active_buffers = save_active_buffers;
-  dirty_buffers = save_dirty_buffers;
   if (mp == NAV_ABORT) return;
   goto start;
 
@@ -730,9 +729,9 @@ cleanup:
 }
 
 #ifdef HAVE_DUAL_INTERFACE
-#define MAIN_MENU_LAST_ENTRY 4
+#define MAIN_MENU_LAST_ENTRY 6
 #else
-#define MAIN_MENU_LAST_ENTRY 3
+#define MAIN_MENU_LAST_ENTRY 5
 #endif
 
 bool menu(void) {
@@ -768,12 +767,13 @@ bool menu(void) {
           if (my > 0) {
             --my;               // Move within same page
           } else {
+            mp = LCD_LINES - 1;
             my = LCD_LINES - 1; // page up
             break;
           }
         } else {
           // flip down to last menu entry
-          my = 0;
+          my = MAIN_MENU_LAST_ENTRY % LCD_LINES;
           mp = MAIN_MENU_LAST_ENTRY;
           break;
         }
@@ -806,6 +806,8 @@ bool menu(void) {
     else if (mp == 2) menu_device_number();
     else if (mp == 3) menu_set_clock();
     else if (mp == 4) menu_select_bus();
+    else if (mp == 5) menu_adjust_contrast();
+    else if (mp == 6) menu_adjust_brightness();
     else  break;
     if (current_error != ERROR_OK) break;
   }
@@ -816,3 +818,98 @@ bool menu(void) {
   return old_bus != active_bus;
 }
 
+static void pwm_error(void) {
+  lcd_locate(0, LCD_LINES - 2);
+  lcd_puts_P(PSTR("Error:PWM controller\nnot found"));
+  wait_anykey();
+}
+
+void menu_adjust_contrast(void) {
+  uint8_t i;
+  uint8_t min = 0;
+  uint8_t max = LCD_COLS - 2;
+  uint8_t res;
+
+  lcd_clear();
+  lcd_puts_P(PSTR("Adjust LCD contrast"));
+  lcd_locate(0, 1);
+
+  lcd_cursor(false);
+  set_busy_led(true);
+  for (;;) {
+    lcd_locate(0, 1);
+    lcd_putc('[');
+    for (i = 0; i < LCD_COLS - 2; i++) {
+      lcd_putc(i >= lcd_contrast ? ' ' : 0xFF);
+    }
+    lcd_putc(']');
+    res = lcd_set_contrast(lcd_contrast);
+    if (res) break;
+    for (;;) {
+      if (get_key_autorepeat(KEY_PREV)) {
+        if (lcd_contrast <= min) lcd_contrast = max;
+        else --lcd_contrast;
+        break;
+      }
+      if (get_key_autorepeat(KEY_NEXT)) {
+        if (lcd_contrast >= max) lcd_contrast = min;
+        else ++lcd_contrast;
+        break;
+      }
+      if (get_key_press(KEY_SEL)) {
+        lcd_cursor(false);
+        set_busy_led(false);
+        menu_ask_store_settings();
+        return;
+      }
+    }
+  }
+  pwm_error();
+}
+
+
+void menu_adjust_brightness(void) {
+  uint8_t i;
+  uint8_t min = 0;
+  uint8_t max = 255;
+  uint8_t res;
+  uint8_t step;
+
+  lcd_clear();
+  lcd_puts_P(PSTR("Adjust brightness"));
+  lcd_locate(0, 1);
+
+  lcd_cursor(false);
+  set_busy_led(true);
+  for (;;) {
+    lcd_locate(0, 1);
+    lcd_putc('[');
+    for (i = 0; i < 18; i++) {
+      lcd_putc(i >= (lcd_brightness / 14) ? ' ' : 0xFF);
+    }
+    lcd_putc(']');
+    res = lcd_set_brightness(lcd_brightness);
+    if (res) break;
+    for (;;) {
+      step = 10;
+      if (lcd_brightness < 20 || lcd_brightness > 235) step = 1;
+      if (get_key_autorepeat(KEY_PREV)) {
+        if (lcd_brightness <= min) lcd_brightness = max;
+        else lcd_brightness -= step;
+        break;
+      }
+      if (get_key_autorepeat(KEY_NEXT)) {
+        if (lcd_brightness >= max) lcd_brightness = min;
+        else lcd_brightness += step;
+        break;
+      }
+      if (get_key_press(KEY_SEL)) {
+        lcd_cursor(false);
+        set_busy_led(false);
+        menu_ask_store_settings();
+        return;
+      }
+    }
+  }
+  pwm_error();
+}

@@ -24,8 +24,6 @@
 #ifndef LCD_H
 #define LCD_H
 
-#include <avr/pgmspace.h>
-
 #define LCD_CURSOR_NONE  0x00
 #define LCD_CURSOR_LINE  0x02
 #define LCD_CURSOR_BLOCK 0x01
@@ -34,9 +32,9 @@
 
 void lcd_init(void);
 void lcd_clrscr(void);
-void lcd_putxy_P(uint8_t xpos, uint8_t ypos, prog_char *text);
+void lcd_putxy_P(uint8_t xpos, uint8_t ypos, char *text);
 void lcd_putxy(uint8_t xpos, uint8_t ypos, char *text);
-void lcd_puts_P(prog_char *text);
+void lcd_puts_P(char *text);
 void lcd_puts(char *text);
 void lcd_setcursormode(uint8_t mode);
 void lcd_gotoxy(uint8_t x, uint8_t y);

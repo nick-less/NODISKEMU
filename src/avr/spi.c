@@ -1,5 +1,5 @@
 /* NODISKEMU - SD/MMC to IEEE-488 interface/controller
-   Copyright (C) 2007-2015  Ingo Korb <ingo@akana.de>
+   Copyright (C) 2007-2018  Ingo Korb <ingo@akana.de>
 
    NODISKEMU is a fork of sd2iec by Ingo Korb (et al.), http://sd2iec.de
 
@@ -66,7 +66,7 @@ void spi_set_speed(spi_speed_t speed) {
     if (active_bus == IEC)
       spi_set_divisor(SPI_DIVISOR_SLOW);
     else
-      spi_set_divisor(SPI_DIVISOR_FAST * 2);
+      spi_set_divisor(SPI_DIVISOR_SLOW * 2);
   }
 #else
   if (speed == SPI_SPEED_FAST) {

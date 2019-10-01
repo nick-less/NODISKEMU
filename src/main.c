@@ -1,5 +1,5 @@
 /* NODISKEMU - SD/MMC to IEEE-488 interface/controller
-   Copyright (C) 2007-2015  Ingo Korb <ingo@akana.de>
+   Copyright (C) 2007-2018  Ingo Korb <ingo@akana.de>
 
    NODISKEMU is a fork of sd2iec by Ingo Korb (et al.), http://sd2iec.de
 
@@ -96,7 +96,7 @@ int main(void) __attribute__((OS_main));
 #endif
 int main(void) {
   /* Early system initialisation */
-  board_init();
+  early_board_init();
   system_init_early();
   leds_init();
 
@@ -157,6 +157,11 @@ int main(void) {
 //  if (menu_system_enabled)
 //    lcd_splashscreen();
 
+  bus_interface_init();
+  bus_init();
+  read_configuration();
+  late_board_init();
+
   for (;;) {
     
     bus_functions[active_bus].bus_interface_init();
@@ -177,5 +182,8 @@ int main(void) {
 #endif
     bus_functions[active_bus].bus_mainloop();
     
+//    bus_mainloop();
+//    bus_interface_init();
+//    bus_init();    // needs delay, inits device address with HW settings
   }
 }

@@ -1,5 +1,5 @@
 /* NODISKEMU - SD/MMC to IEEE-488 interface/controller
-   Copyright (C) 2007-2015  Ingo Korb <ingo@akana.de>
+   Copyright (C) 2007-2018  Ingo Korb <ingo@akana.de>
 
    NODISKEMU is a fork of sd2iec by Ingo Korb (et al.), http://sd2iec.de
 
@@ -183,10 +183,9 @@ void uart_init(void) {
    UBRRH = UBRRH_VALUE;
    UBRRL = UBRRL_VALUE;
 #  if USE_2X
-   UCSRA |= (1 << U2X);          /* U2X-mode required */
+   UCSRA |= (1 << U2X0);        /* U2X-mode required */
 #    else
-   // FIXME!! disabled
-   // UCSRA &= ~(1 << U2X);         /* U2X-not required */
+   UCSRA &= ~(1 << U2X0);       /* U2X-not required */
 #  endif
 #endif
 
