@@ -524,59 +524,29 @@ void ieee488_Init(void) {
   ieee488_InitAtnInterrupt();
 }
 
-
 uint8_t ieee488_RxByte(char *c) {
   uint8_t eoi = RX_DATA;
 
   do {
     ieee488_SetNRFD(1);
     ieee488_SetNDAC(0);
-    if (ieee488_TE75160 != TE_LISTEN) {
+    if (ieee488_TE75160 != TE_LISTEN)
       ieee488_DataListen();
-    }
     do {
-      if (ieee488_ATN()) return RX_ATN;  // ATN became low, abort
+      if (ieee488_ATN_received) return RX_ATN;  // ATN became low, abort
       if (ieee488_CheckIFC())   return RX_IFC;
     } while (ieee488_DAV());                    // Wait for DAV low
     // DAV is now low, NDAC must be high in max. 64 ms
     ieee488_SetNRFD(0);
-    if (!ieee488_EOI()) {
+    if (!ieee488_EOI())
       eoi = RX_EOI;
-    }
     *c = ieee488_Data();
   } while (ieee488_DAV());              // If DAV is high again, we've
                                         // seen only a glitch
   ieee488_SetNDAC(1);
 
   do {
-    if (ieee488_ATN()) return RX_ATN;
-    if (ieee488_CheckIFC())   return RX_IFC;
-  } while (!ieee488_DAV());             // wait for DAV high
-
-  ieee488_SetNDAC(0);
-  return eoi;
-}
-
-uint8_t ieee488_RxByte(char *c) {
-  uint8_t eoi = RX_DATA;
-
-  do {
-    ieee488_SetNRFD(1);
-    ieee488_SetNDAC(0);
-    do {
-    } while (ieee488_DAV());                    // Wait for DAV low
-    // DAV is now low, NDAC must be high in max. 64 ms
-    ieee488_SetNRFD(0);
-    if (!ieee488_EOI()) {
-      eoi = RX_EOI;
-    }
-    *c = ieee488_Data();
-  } while (ieee488_DAV());              // If DAV is high again, we've
-                                        // seen only a glitch
-  ieee488_SetNDAC(1);
-
-  do {
-    if (ieee488_ATN()) return RX_ATN;
+    if (ieee488_ATN_received) return RX_ATN;
     if (ieee488_CheckIFC())   return RX_IFC;
   } while (!ieee488_DAV());             // wait for DAV high
 

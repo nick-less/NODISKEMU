@@ -1180,128 +1180,78 @@ static inline void iec_interrupts_init(void) {
 
 #define DEBUG_BUS_DATA 1
 #define FUNC_INLINE inline
-/* ---------- Hardware configuration: Example ---------- */
-/* This is a commented example for most of the available options    */
-/* in case someone wants to build Yet Another[tm] hardware variant. */
-/* Some of the values are chosen randomly, so this variant is not   */
-/* expected to compile successfully.                                */
 
-/*** SD card support ***/
-/* If your device supports SD cards by default, define this symbol. */
-#  define HAVE_SD
 
-/* Initialize all pins and interrupts related to SD - except SPI */
+
+/* ---------- Hardware configuration: petSD nano --------- */
+#define HAVE_SD
+
+#ifndef CONFIG_IGNORE_CARD_DETECT
+#  define SD_CHANGE_HANDLER     ISR(PCINT3_vect)
+#endif
+
+#define SD_SUPPLY_VOLTAGE (1L<<21)
+
+/* 250 kHz slow, 2 MHz fast */
+#define SPI_DIVISOR_SLOW 32
+#define SPI_DIVISOR_FAST 4
+
 static inline void sdcard_interface_init(void) {
- 
+  DDRD   &= ~_BV(PD5);            /* card detect */
+  PORTD  |=  _BV(PD5);
+  DDRD   &= ~_BV(PD6);            /* write protect  */
+  PORTD  |=  _BV(PD6);
+#ifndef CONFIG_IGNORE_CARD_DETECT
+  PCMSK3 |=  _BV(PCINT29);        /* card change interrupt */
+  PCICR  |=  _BV(PCIE3);
+  PCIFR  |=  _BV(PCIF3);
+#endif
 }
 
-/* sdcard_detect() must return non-zero while a card is inserted */
-/* This must be a pin capable of generating interrupts.          */
 static inline uint8_t sdcard_detect(void) {
+#ifdef CONFIG_IGNORE_CARD_DETECT
   return 1;
+#else
+  return (!(PIND & _BV(PD5)));
+#endif
 }
 
-/* Returns non-zero when the currently inserted card is write-protected */
 static inline uint8_t sdcard_wp(void) {
-  return 0;
+  return (PIND & _BV(PD6));
 }
 
 
+// The busy-LED and the UART's TxD share the same port pin, so light the
+// LED only when debug messages are de-selected:
 
-/* SD Card supply voltage - choose the one appropiate to your board */
-/* #  define SD_SUPPLY_VOLTAGE (1L<<15)  / * 2.7V - 2.8V */
-/* #  define SD_SUPPLY_VOLTAGE (1L<<16)  / * 2.8V - 2.9V */
-/* #  define SD_SUPPLY_VOLTAGE (1L<<17)  / * 2.9V - 3.0V */
-#  define SD_SUPPLY_VOLTAGE (1L<<18)  /* 3.0V - 3.1V */
-/* #  define SD_SUPPLY_VOLTAGE (1L<<19)  / * 3.1V - 3.2V */
-/* #  define SD_SUPPLY_VOLTAGE (1L<<20)  / * 3.2V - 3.3V */
-/* #  define SD_SUPPLY_VOLTAGE (1L<<21)  / * 3.3V - 3.4V */
-/* #  define SD_SUPPLY_VOLTAGE (1L<<22)  / * 3.4V - 3.5V */
-/* #  define SD_SUPPLY_VOLTAGE (1L<<23)  / * 3.5V - 3.6V */
-
-/* SPI clock divisors - the slow one must be 400KHz or slower,        */
-/* the fast one can be as high as you think your hardware will handle */
-#  define SPI_DIVISOR_SLOW 32
-#  define SPI_DIVISOR_FAST 4
-
-
-/*** Device address selection ***/
-/* device_hw_address() returns the hardware-selected device address */
-static inline uint8_t device_hw_address(void) {
-  return CONFIG_DEFAULT_ADDR;
-}
-
-/* Configure hardware device address pins */
-static inline void device_hw_address_init(void) {
-}
-
-/*** LEDs ***/
-/* Please don't build single-LED hardware anymore... */
-
-/* Initialize ports for all LEDs */
 static inline void leds_init(void) {
-  /* Note: Depending on the chip and register these lines can compile */
-  /*       to one instruction each on AVR. For two bits this is one   */
-  /*       instruction shorter than "DDRC |= _BV(PC0) | _BV(PC1);"    */
+  DDRD |= _BV(PD0);
+#ifndef CONFIG_UART_DEBUG
+  DDRD |= _BV(PD1);
+#endif
 }
 
-/* --- "BUSY" led, recommended color: green (usage similiar to 1541 LED) --- */
 static inline __attribute__((always_inline)) void set_busy_led(uint8_t state) {
+#ifndef CONFIG_UART_DEBUG
+  if (state)
+    PORTD |= _BV(PD1);
+  else
+    PORTD &= ~_BV(PD1);
+#endif
 }
 
-/* --- "DIRTY" led, recommended color: red (errors, unwritten data in memory) --- */
-#  define LED_DIRTY_PORT        PORTC
-#  define LED_DIRTY_INPUT       PINC
-#  define LED_DIRTY_PIN         PC5
-
-/* Use separate input/output lines?                                    */
-/* The code assumes that the input is NOT inverted, but the output is. */
-//#  define IEC_SEPARATE_OUT
-//#  define IEC_OPIN_ATN   PA4
-//#  define IEC_OPIN_DATA  PA5
-//#  define IEC_OPIN_CLOCK PA6
-//#  define IEC_OPIN_SRQ   PA7
-
-/* You can use different ports for input and output bits. The code tries */
-/* to not stomp on the unused bits. IEC output is on IEC_PORT.           */
-/* Not well-tested yet.                                                  */
-//#  define IEC_DDRIN      DDRX
-//#  define IEC_DDROUT     DDRY
-//#  define IEC_PORTIN     PORTX
-
-/* ATN interrupt (required) */
-#  define IEC_ATN_INT_VECT    PCINT0_vect
-static inline void iec_interrupts_init(void) {
-  PCMSK0 = _BV(PCINT0);
-  PCIFR |= _BV(PCIF0);
-}
+#  define LED_DIRTY_PORT        PORTD
+#  define LED_DIRTY_INPUT       PIND
+#  define LED_DIRTY_PIN         PD0
 
 
-/* CLK interrupt (not required) */
-/* Dreamload requires interrupts for both the ATN and CLK lines. If both are served by */
-/* the same PCINT vector, define that as ATN interrupt above and define IEC_PCMSK.     */
-//#  define IEC_PCMSK             PCMSK0
-/* If the CLK line has its own dedicated interrupt, use the following definitions: */
-//#  define IEC_CLK_INT           INT5
-//#  define IEC_CLK_INT_VECT      INT5_vect
-//static inline void iec_clock_int_setup(void) {
-//  EICRB |= _BV(ISC50);
-//}
-
-
-
-/*** IEEE signals ***/
-/* not documented yet, look at petSD/petSD+ for guidance */
 #  define IEEE_ATN_INT          INT0    /* ATN interrupt (required!) */
 #  define IEEE_ATN_INT0
 
-//#  define IEEE_PORT_TE          PORTB   /* TE */
-//#  define IEEE_DDR_TE           DDRB
-//#  define IEEE_PIN_TE           PB0
-//#  define IEEE_PORT_DC          PORTC   /* DC */
-//#  define IEEE_DDR_DC           DDRC
-//#  define IEEE_PIN_DC           PC5
-
+#  define HAVE_7516X            /* Device uses 75160/75161 bus drivers */
+#  define IEEE_PORT_TE          PORTC   /* TE */
+#  define IEEE_DDR_TE           DDRC
+#  define IEEE_PIN_TE           PC3
 #  define IEEE_INPUT_ATN        PIND    /* ATN */
 #  define IEEE_PORT_ATN         PORTD
 #  define IEEE_DDR_ATN          DDRD
@@ -1309,67 +1259,80 @@ static inline void iec_interrupts_init(void) {
 #  define IEEE_INPUT_NDAC       PINC    /* NDAC */
 #  define IEEE_PORT_NDAC        PORTC
 #  define IEEE_DDR_NDAC         DDRC
-#  define IEEE_PIN_NDAC         PC1
+#  define IEEE_PIN_NDAC         PC6
 #  define IEEE_INPUT_NRFD       PINC    /* NRFD */
 #  define IEEE_PORT_NRFD        PORTC
 #  define IEEE_DDR_NRFD         DDRC
-#  define IEEE_PIN_NRFD         PC3
+#  define IEEE_PIN_NRFD         PC7
 #  define IEEE_INPUT_DAV        PINC    /* DAV */
 #  define IEEE_PORT_DAV         PORTC
 #  define IEEE_DDR_DAV          DDRC
-#  define IEEE_PIN_DAV          PC2
+#  define IEEE_PIN_DAV          PC5
 #  define IEEE_INPUT_EOI        PINC    /* EOI */
 #  define IEEE_PORT_EOI         PORTC
 #  define IEEE_DDR_EOI          DDRC
 #  define IEEE_PIN_EOI          PC4
-//#  define IEEE_D_PIN            PINA    /* Data */
-//#  define IEEE_D_PORT           PORTA
-//#  define IEEE_D_DDR            DDRA
-/* IFC is only used if ethernet chip is not detected because
-   the hardware shares the port pin with ETINT ethernet interrupt */
-   static void ieee_interface_init(void) {
-    IEEE_PORT_ATN |= _BV(IEEE_PIN_ATN);               // Enable pull-up for ATN
-//    IEEE_PORT_IFC |= IEEE_BIT_IFC;                    // Enable pull-up for IFC
-    IEEE_DDR_ATN  &= (uint8_t) ~ _BV(IEEE_PIN_ATN);   // Define ATN as input
-//    IEEE_DDR_IFC  &= (uint8_t) ~ IEEE_BIT_IFC;        // Define IFC as input
-  }
-  
-/*** User interface ***/
-/* Button NEXT changes to the next disk image and enables sleep mode (held) */
-#  define BUTTON_NEXT _BV(PC5)
+#  define IEEE_INPUT_IFC        PINC    /* IFC */
+#  define IEEE_PORT_IFC         PORTC
+#  define IEEE_DDR_IFC          DDRC
+#  define IEEE_PIN_IFC          PC2
+#  define IEEE_D_PIN            PINA    /* Data */
+#  define IEEE_D_PORT           PORTA
+#  define IEEE_D_DDR            DDRA
+// all data on port a
+//#  define IEEE_INPUT_D7         PIND    /* Data bit 7 on separate port */
+//#  define IEEE_PORT_D7          PORTD
+//#  define IEEE_DDR_D7           DDRD
+//#  define IEEE_PIN_D7           PD7
+#  define IEEE_BIT_TE           _BV(IEEE_PIN_TE)
+#  define IEEE_BIT_IFC          _BV(IEEE_PIN_IFC)
 
-/* Button PREV changes to the previous disk image */
-#  define BUTTON_PREV _BV(PC6)
 
-/* Read the raw button state - a depressed button should read as 0 */
-static inline rawbutton_t buttons_read(void) {
-  return PINC & (BUTTON_NEXT | BUTTON_PREV);
-}
-
+// nano petSD has no buttons
 static inline void buttons_init(void) {
-  DDRC  &= (uint8_t)~(BUTTON_NEXT | BUTTON_PREV);
-  PORTC |= BUTTON_NEXT | BUTTON_PREV;
+
 }
 
-/* Software I2C lines for the RTC and display */
-/*
-#  define SOFTI2C_PORT    PORTC
-#  define SOFTI2C_PIN     PINC
-#  define SOFTI2C_DDR     DDRC
-#  define SOFTI2C_BIT_SCL PC4
-#  define SOFTI2C_BIT_SDA PC5
-#  define SOFTI2C_DELAY   6
-*/
+static inline void device_hw_address_init(void) {
+  // left intentionally blank
+}
 
-/*** board-specific initialisation ***/
-/* Currently used on uIEC/CF and uIEC/SD only */
-//#define HAVE_BOARD_INIT
-//static inline void board_init(void) {
-//  // turn on power LED
-//  DDRG  |= _BV(PG1);
-//  PORTG |= _BV(PG1);
-//}
+static inline uint8_t device_hw_address(void) {
+  return CONFIG_DEFAULT_ADDR;
+}
 
+
+static inline void ieee_interface_init(void) {
+  IEEE_PORT_TE  &= (uint8_t) ~ IEEE_BIT_TE;         // Set TE low
+  IEEE_DDR_TE   |= IEEE_BIT_TE;                     // Define TE  as output
+  IEEE_PORT_ATN |= _BV(IEEE_PIN_ATN);               // Enable pull-up for ATN
+  IEEE_PORT_IFC |= IEEE_BIT_IFC;                    // Enable pull-up for IFC
+  IEEE_DDR_ATN  &= (uint8_t) ~ _BV(IEEE_PIN_ATN);   // Define ATN as input
+  IEEE_DDR_IFC  &= (uint8_t) ~ IEEE_BIT_IFC;        // Define IFC as input
+}
+
+#ifdef CONFIG_HAVE_IEC
+#  define IEC_OUTPUTS_NONINVERTED
+#  define IEC_INPUT             PINC
+#  define IEC_DDR               DDRC
+#  define IEC_PORT              PORTC
+#  define IEC_PIN_ATN           PC2
+#  define IEC_PIN_DATA          PC4
+#  define IEC_PIN_CLOCK         PC5
+#  define IEC_PIN_SRQ           0
+#  define IEC_SEPARATE_OUT
+#  define IEC_OPIN_ATN          0
+#  define IEC_OPIN_DATA         PC6
+#  define IEC_OPIN_CLOCK        PC7
+#  define IEC_OPIN_SRQ          0
+#  define IEC_ATN_INT_VECT      PCINT2_vect
+#  define IEC_PCMSK             PCMSK2
+
+static inline void iec_interrupts_init(void) {
+  PCICR |= _BV(PCIE2);
+  PCIFR |= _BV(PCIF2);
+}
+#endif
 
 
 #else

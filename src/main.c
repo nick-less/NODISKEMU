@@ -157,8 +157,8 @@ int main(void) {
 //  if (menu_system_enabled)
 //    lcd_splashscreen();
 
-  bus_interface_init();
-  bus_init();
+//  bus_interface_init();
+//  bus_init();
   read_configuration();
   late_board_init();
 

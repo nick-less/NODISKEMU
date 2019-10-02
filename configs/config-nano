@@ -38,13 +38,13 @@ CONFIG_HAVE_IEC=n
 CONFIG_HAVE_IEEE=y
 
 # device has EEPROM filesystem - EEPROM should be at least 4k
-CONFIG_HAVE_EEPROMFS=n
+CONFIG_HAVE_EEPROMFS=y
 
 # target architecture
 CONFIG_ARCH=avr
 
 # MCU to compile for
-CONFIG_MCU=atmega328p
+CONFIG_MCU=atmega1284p
 
 # Use the -relax parameter when linking?
 # Passing -O9 and -relax to the linker saves ~650 bytes of flash,
@@ -61,7 +61,7 @@ CONFIG_BOOTLOADER=n
 # Value of the signature word
 CONFIG_BOOT_DEVID=0x49454321
 
-CONFIG_NO_D64=y
+CONFIG_NO_D64=n
 
 # Enable UART debugging - requires 24 bytes plus buffer size in RAM
 CONFIG_UART_DEBUG=y
@@ -166,7 +166,7 @@ CONFIG_BUFFER_COUNT=2
 CONFIG_STACK_TRACKING=n
 
 # Maximum number of partitions
-CONFIG_MAX_PARTITIONS=1
+CONFIG_MAX_PARTITIONS=2
 
 # Real Time Clock option
 #   disable all to disable T-R/T-W commands
