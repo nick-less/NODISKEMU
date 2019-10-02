@@ -28,8 +28,7 @@
 #
 # This file is included in the main NODISKEMU Makefile and also parsed
 # into autoconf.h.
-# config for an arduino nano, these sell for $2.50, plus an sdcard adapter it will be 4 bucks,
-# wont be any cheaper anytime soon
+# config for an mini petSD+ like hardware which fits inside a cbm 8296
 
 # Device has serial Commodore bus?
 CONFIG_HAVE_IEC=n
@@ -159,7 +158,7 @@ CONFIG_COMMAND_BUFFER_SIZE=120
 
 # Number of sector buffers (256 byte+a bit of overhead)
 #  In general: More buffers -> More open files at the same time
-CONFIG_BUFFER_COUNT=2
+CONFIG_BUFFER_COUNT=32
 
 # Track the stack size
 # Warning: This option increases the code size a lot.
