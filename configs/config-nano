@@ -29,6 +29,9 @@
 # This file is included in the main NODISKEMU Makefile and also parsed
 # into autoconf.h.
 # config for an mini petSD+ like hardware which fits inside a cbm 8296
+#
+# avrdude -c stk500v1  -p m1284p -b 19200  -P COM4 -Uefuse:w:0xFC:m -Uhfuse:w:0xD2:m -Ulfuse:w:0xF7:m -e -Uflash:w:NODISKEMU.hex -v -v
+# avrdude -c stk500v1  -p m1284p -b 19200  -P COM4 -e -Uflash:w:NODISKEMU.hex -v -v
 
 # Device has serial Commodore bus?
 CONFIG_HAVE_IEC=n
