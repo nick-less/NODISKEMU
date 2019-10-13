@@ -1092,17 +1092,13 @@ static void parse_getpartition(void) {
   part -= 1;
 
   /* Create partition info */
-  #ifdef CONFIG_HAVE_D64  
   if (partition[part].fop == &d64ops) {
     /* Use type of mounted image as partition type */
     *ptr++ = partition[part].imagetype & D64_TYPE_MASK;
   } else {
-  #endif
     /* Use native for anything else */
     *ptr++ = 1;
-  #ifdef CONFIG_HAVE_D64  
   }
-  #endif
   *ptr++ = 0xe2; // 1.6MB disk - "reserved" for HD
 
   *ptr++ = part+1;
@@ -2157,13 +2153,12 @@ void parse_doscommand(void) {
 
   /* Send command to display */
   display_doscommand(command_length, command_buffer);
+
   /* MD/CD/RD clash with other commands, so they're checked first */
   if (command_buffer[0] != 'X' && command_buffer[1] == 'D') {
     parse_dircommand();
     return;
   }
-  
-#ifdef ENABLE_DOSCOMMANDS
 
   switch (command_buffer[0]) {
   case 'B':
@@ -2243,5 +2238,4 @@ void parse_doscommand(void) {
     set_error(ERROR_SYNTAX_UNKNOWN);
     break;
   }
-#endif
 }
