@@ -50,8 +50,8 @@
 
 #define NRFD            0
 #define NDAC            1
-#define EOI             3
 #define DAV             2
+#define EOI             3
 #define TE              4
 
 INT0_vect:

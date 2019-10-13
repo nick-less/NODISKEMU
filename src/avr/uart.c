@@ -47,7 +47,7 @@ uint8_t txbuf[1 << 8];
 volatile uint16_t read_idx;
 volatile uint16_t write_idx;
 
-void uart_putc_disabled_org(char c) {
+void uart_putc(char c) {
   uint16_t t=(write_idx+1) & (sizeof(txbuf)-1);
 #ifndef CONFIG_DEADLOCK_ME_HARDER // :-)
   UCSRB &= ~ _BV(UDRIE);   // turn off RS232 irq
@@ -130,7 +130,7 @@ void uart_flush(void) {
   while (read_idx != write_idx) ;
 }
 
-void uart_puts_P( char *text) {
+void uart_puts_P(const char *text) {
   uint8_t ch;
 
   while ((ch = pgm_read_byte(text++))) {
@@ -145,10 +145,12 @@ void uart_putcrlf(void) {
 
 static FILE mystdout = FDEV_SETUP_STREAM(ioputc, NULL, _FDEV_SETUP_WRITE);
 
+/*
 void uart_putc( unsigned char data ) {
 	while ( !(UCSR0A & (1<<UDRE0)) );  
 	UDR0 = data; 			        
 }
+*/
 
 void uart_print( unsigned char* s) {
   while (*s) {

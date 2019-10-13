@@ -1178,7 +1178,6 @@ static inline void iec_interrupts_init(void) {
 #  endif
 #elif CONFIG_HARDWARE_VARIANT == HW_ARDUINO_NANO
 
-#define DEBUG_BUS_DATA 1
 #define FUNC_INLINE inline
 
 /* ---------- Hardware configuration: petSD nano --------- */
@@ -1309,7 +1308,7 @@ static inline void ieee_interface_init(void) {
   IEEE_DDR_IFC  &= (uint8_t) ~ IEEE_BIT_IFC;        // Define IFC as input
 }
 
-
+ #undef COND_INV
 
 
 #else
