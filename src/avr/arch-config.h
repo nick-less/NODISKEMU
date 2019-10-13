@@ -1181,8 +1181,6 @@ static inline void iec_interrupts_init(void) {
 #define DEBUG_BUS_DATA 1
 #define FUNC_INLINE inline
 
-
-
 /* ---------- Hardware configuration: petSD nano --------- */
 #define HAVE_SD
 
@@ -1245,13 +1243,13 @@ static inline __attribute__((always_inline)) void set_busy_led(uint8_t state) {
 #  define LED_DIRTY_PIN         PD0
 
 
-#  define IEEE_ATN_INT          INT0    /* ATN interrupt (required!) */
+#  define IEEE_ATN_INT          INT26    /* ATN interrupt (required!) */
 #  define IEEE_ATN_INT0
 
 #  define HAVE_7516X            /* Device uses 75160/75161 bus drivers */
 #  define IEEE_PORT_TE          PORTC   /* TE */
 #  define IEEE_DDR_TE           DDRC
-#  define IEEE_PIN_TE           PC3
+#  define IEEE_PIN_TE           PC4
 #  define IEEE_INPUT_ATN        PIND    /* ATN */
 #  define IEEE_PORT_ATN         PORTD
 #  define IEEE_DDR_ATN          DDRD
@@ -1259,23 +1257,23 @@ static inline __attribute__((always_inline)) void set_busy_led(uint8_t state) {
 #  define IEEE_INPUT_NDAC       PINC    /* NDAC */
 #  define IEEE_PORT_NDAC        PORTC
 #  define IEEE_DDR_NDAC         DDRC
-#  define IEEE_PIN_NDAC         PC6
+#  define IEEE_PIN_NDAC         PC1
 #  define IEEE_INPUT_NRFD       PINC    /* NRFD */
 #  define IEEE_PORT_NRFD        PORTC
 #  define IEEE_DDR_NRFD         DDRC
-#  define IEEE_PIN_NRFD         PC7
+#  define IEEE_PIN_NRFD         PC0
 #  define IEEE_INPUT_DAV        PINC    /* DAV */
 #  define IEEE_PORT_DAV         PORTC
 #  define IEEE_DDR_DAV          DDRC
-#  define IEEE_PIN_DAV          PC5
+#  define IEEE_PIN_DAV          PC2
 #  define IEEE_INPUT_EOI        PINC    /* EOI */
 #  define IEEE_PORT_EOI         PORTC
 #  define IEEE_DDR_EOI          DDRC
-#  define IEEE_PIN_EOI          PC4
+#  define IEEE_PIN_EOI          PC3
 #  define IEEE_INPUT_IFC        PINC    /* IFC */
 #  define IEEE_PORT_IFC         PORTC
 #  define IEEE_DDR_IFC          DDRC
-#  define IEEE_PIN_IFC          PC2
+#  define IEEE_PIN_IFC          PC5
 #  define IEEE_D_PIN            PINA    /* Data */
 #  define IEEE_D_PORT           PORTA
 #  define IEEE_D_DDR            DDRA
@@ -1311,28 +1309,7 @@ static inline void ieee_interface_init(void) {
   IEEE_DDR_IFC  &= (uint8_t) ~ IEEE_BIT_IFC;        // Define IFC as input
 }
 
-#ifdef CONFIG_HAVE_IEC
-#  define IEC_OUTPUTS_NONINVERTED
-#  define IEC_INPUT             PINC
-#  define IEC_DDR               DDRC
-#  define IEC_PORT              PORTC
-#  define IEC_PIN_ATN           PC2
-#  define IEC_PIN_DATA          PC4
-#  define IEC_PIN_CLOCK         PC5
-#  define IEC_PIN_SRQ           0
-#  define IEC_SEPARATE_OUT
-#  define IEC_OPIN_ATN          0
-#  define IEC_OPIN_DATA         PC6
-#  define IEC_OPIN_CLOCK        PC7
-#  define IEC_OPIN_SRQ          0
-#  define IEC_ATN_INT_VECT      PCINT2_vect
-#  define IEC_PCMSK             PCMSK2
 
-static inline void iec_interrupts_init(void) {
-  PCICR |= _BV(PCIE2);
-  PCIFR |= _BV(PCIF2);
-}
-#endif
 
 
 #else
@@ -1351,183 +1328,6 @@ static inline void iec_interrupts_init(void) {
 #define HAVE_DUAL_INTERFACE
 #endif
 
-
-/* --- IEC --- */
-#ifdef CONFIG_HAVE_IEC
-
-#define IEC_BIT_ATN      _BV(IEC_PIN_ATN)
-#define IEC_BIT_DATA     _BV(IEC_PIN_DATA)
-#define IEC_BIT_CLOCK    _BV(IEC_PIN_CLOCK)
-#define IEC_BIT_SRQ      _BV(IEC_PIN_SRQ)
-
-/* Return type of iec_bus_read() */
-typedef uint8_t iec_bus_t;
-
-/* OPIN definitions are only used in the assembler module */
-#ifdef IEC_SEPARATE_OUT
-#  define IEC_OBIT_ATN   _BV(IEC_OPIN_ATN)
-#  define IEC_OBIT_DATA  _BV(IEC_OPIN_DATA)
-#  define IEC_OBIT_CLOCK _BV(IEC_OPIN_CLOCK)
-#  define IEC_OBIT_SRQ   _BV(IEC_OPIN_SRQ)
-#  define IEC_OUTPUT     IEC_PORT
-#else
-#  define IEC_OPIN_ATN   IEC_PIN_ATN
-#  define IEC_OPIN_DATA  IEC_PIN_DATA
-#  define IEC_OPIN_CLOCK IEC_PIN_CLOCK
-#  define IEC_OPIN_SRQ   IEC_PIN_SRQ
-#  define IEC_OBIT_ATN   IEC_BIT_ATN
-#  define IEC_OBIT_DATA  IEC_BIT_DATA
-#  define IEC_OBIT_CLOCK IEC_BIT_CLOCK
-#  define IEC_OBIT_SRQ   IEC_BIT_SRQ
-#  define IEC_OUTPUT     IEC_DDR
-#endif
-
-#ifndef IEC_PORTIN
-#  define IEC_PORTIN IEC_PORT
-#endif
-
-#ifndef IEC_DDRIN
-#  define IEC_DDRIN  IEC_DDR
-#  define IEC_DDROUT IEC_DDR
-#endif
-
-/* The AVR based devices usually invert output lines, */
-/* so this can be the default for most configurations.   */
-#ifndef IEC_OUTPUTS_NONINVERTED
-#define IEC_OUTPUTS_INVERTED
-#endif
-
-#ifdef IEC_PCMSK
-   /* For hardware configurations using PCINT for IEC IRQs */
-#  define set_iec_atn_irq(x) \
-     if (x) { IEC_PCMSK |= _BV(IEC_PIN_ATN); } \
-     else { IEC_PCMSK &= (uint8_t)~_BV(IEC_PIN_ATN); }
-#  define set_clock_irq(x) \
-     if (x) { IEC_PCMSK |= _BV(IEC_PIN_CLOCK); } \
-     else { IEC_PCMSK &= (uint8_t)~_BV(IEC_PIN_CLOCK); }
-#  define HAVE_CLOCK_IRQ
-#else
-     /* Hardware ATN interrupt */
-#  define set_iec_atn_irq(x) \
-     if (x) { EIMSK |= _BV(IEC_ATN_INT); } \
-     else { EIMSK &= (uint8_t)~_BV(IEC_ATN_INT); }
-
-#  ifdef IEC_CLK_INT
-     /* Hardware has a CLK interrupt */
-#    define set_clock_irq(x) \
-       if (x) { EIMSK |= _BV(IEC_CLK_INT); } \
-       else { EIMSK &= (uint8_t)~_BV(IEC_CLK_INT); }
-#    define HAVE_CLOCK_IRQ
-#  endif
-#endif
-
-/* IEC output functions */
-#ifdef IEC_OUTPUTS_INVERTED
-#  define COND_INV(x) (!(x))
-#else
-#  define COND_INV(x) (x)
-#endif
-
-static inline __attribute__((always_inline)) void set_atn(uint8_t state) {
-  if (COND_INV(state))
-    IEC_OUTPUT |= IEC_OBIT_ATN;
-  else
-    IEC_OUTPUT &= ~IEC_OBIT_ATN;
-}
-
-static inline __attribute__((always_inline)) void set_data(uint8_t state) {
-  if (COND_INV(state))
-    IEC_OUTPUT |= IEC_OBIT_DATA;
-  else
-    IEC_OUTPUT &= ~IEC_OBIT_DATA;
-}
-
-static inline __attribute__((always_inline)) void set_clock(uint8_t state) {
-  if (COND_INV(state))
-    IEC_OUTPUT |= IEC_OBIT_CLOCK;
-  else
-    IEC_OUTPUT &= ~IEC_OBIT_CLOCK;
-}
-
-#ifdef IEC_SEPARATE_OUT
-static inline __attribute__((always_inline)) void set_srq(uint8_t state) {
-  if (COND_INV(state))
-    IEC_OUTPUT |= IEC_OBIT_SRQ;
-  else
-    IEC_OUTPUT &= ~IEC_OBIT_SRQ;
-}
-#else
-/* this version of the function turns on the pullups when state is 1 */
-/* note: same pin for in/out implies inverted output via DDR */
-static inline __attribute__((always_inline)) void set_srq(uint8_t state) {
-  if (state) {
-    IEC_DDR  &= ~IEC_OBIT_SRQ;
-    IEC_PORT |=  IEC_OBIT_SRQ;
-  } else {
-    IEC_PORT &= ~IEC_OBIT_SRQ;
-    IEC_DDR  |=  IEC_OBIT_SRQ;
-  }
-}
-#endif
-
-#undef COND_INV
-
-// for testing purposes only, probably does not do what you want!
-#define toggle_srq() IEC_INPUT |= IEC_OBIT_SRQ
-
-/* IEC lines initialisation */
-static inline void iec_interface_init(void) {
-#ifdef IEC_SEPARATE_OUT
-  /* Set up the input port - pullups on all lines */
-  IEC_DDRIN  &= (uint8_t)~(IEC_BIT_ATN  | IEC_BIT_CLOCK  | IEC_BIT_DATA  | IEC_BIT_SRQ);
-  IEC_PORTIN |= IEC_BIT_ATN | IEC_BIT_CLOCK | IEC_BIT_DATA | IEC_BIT_SRQ;
-  /* Set up the output port - all lines high */
-  IEC_DDROUT |=            IEC_OBIT_ATN | IEC_OBIT_CLOCK | IEC_OBIT_DATA | IEC_OBIT_SRQ;
-#ifdef IEC_OUTPUTS_INVERTED
-  IEC_PORT   &= (uint8_t)~(IEC_OBIT_ATN | IEC_OBIT_CLOCK | IEC_OBIT_DATA | IEC_OBIT_SRQ);
-#else
-  IEC_PORT   |= (IEC_OBIT_ATN | IEC_OBIT_CLOCK | IEC_OBIT_DATA | IEC_OBIT_SRQ);
-#endif
-#else
-  /* Pullups would be nice, but AVR can't switch from */
-  /* low output to hi-z input directly                */
-  IEC_DDR  &= (uint8_t)~(IEC_BIT_ATN | IEC_BIT_CLOCK | IEC_BIT_DATA | IEC_BIT_SRQ);
-  IEC_PORT &= (uint8_t)~(IEC_BIT_ATN | IEC_BIT_CLOCK | IEC_BIT_DATA);
-  /* SRQ is special-cased because it may be unconnected */
-  IEC_PORT |= IEC_BIT_SRQ;
-#endif
-
-#ifdef HAVE_PARALLEL
-  /* set data lines to input with pullup */
-  PARALLEL_PDDR  = 0;
-  PARALLEL_PPORT = 0xff;
-
-  /* set HSK_OUT and _IN to input with pullup */
-  PARALLEL_HDDR  &= ~(_BV(PARALLEL_HSK_OUT_BIT) |
-                      _BV(PARALLEL_HSK_IN_BIT));
-  PARALLEL_HPORT |= _BV(PARALLEL_HSK_OUT_BIT) |
-                    _BV(PARALLEL_HSK_IN_BIT);
-
-  /* enable interrupt for parallel handshake */
-#  ifdef PARALLEL_PCINT_GROUP
-  /* excluse PCINT group */
-  PARALLEL_PCMSK |= _BV(PARALLEL_HSK_IN_BIT);
-  PCICR |= _BV(PARALLEL_PCINT_GROUP);
-  PCIFR |= _BV(PARALLEL_PCINT_GROUP);
-#  else
-  /* exclusive INTx line */
-#    error Implement me!
-#  endif
-#endif
-
-#if CONFIG_HARDWARE_VARIANT == HW_PETSDPLUS
-  // Enable IEC bus. This is done by a wire link inside the adapter cable
-  // for older petSD+ boards without IEC connector
-  i2c_write_register(I2C_SLAVE_ADDRESS, IO_IEC, 0);
-#endif
-}
-
-#endif /* CONFIG_HAVE_IEC */
 
 
 /* The assembler module needs the vector names, */

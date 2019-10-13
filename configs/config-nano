@@ -78,37 +78,26 @@ CONFIG_COMMAND_CHANNEL_DUMP=y
 # Enable Turbodisk soft fastloader support
 # This option requires an external crystal oscillator!
 CONFIG_LOADER_TURBODISK=n
-
 # Enable Final Cartridge III fast loader
 CONFIG_LOADER_FC3=n
-
 # Enable Dreamload fast loader
 CONFIG_LOADER_DREAMLOAD=n
-
 # Enable ULoad Model 3 fast loader
 CONFIG_LOADER_ULOAD3=n
-
 # Enable G.I. Joe fast loader
 CONFIG_LOADER_GIJOE=n
-
 # Enable Epyx Fast Load cartridge fast loader
 CONFIG_LOADER_EPYXCART=n
-
 # Enable GEOS fast loaders
 CONFIG_LOADER_GEOS=n
-
 # Enable Wheels fast loaders (requires CONFIG_LOADER_GEOS=y)
 CONFIG_LOADER_WHEELS=n
-
 # Enable Nippon fast loader
 CONFIG_LOADER_NIPPON=n
-
 # Enable (some) Action Replay 6 fast loaders
 CONFIG_LOADER_AR6=n
-
 # Enable ELoad Version 1 fast loader
 CONFIG_LOADER_ELOAD1=n
-
 # Enable DolphinDOS parallel speeder
 CONFIG_PARALLEL_DOLPHIN=n
 
@@ -158,7 +147,7 @@ CONFIG_COMMAND_BUFFER_SIZE=120
 
 # Number of sector buffers (256 byte+a bit of overhead)
 #  In general: More buffers -> More open files at the same time
-CONFIG_BUFFER_COUNT=32
+CONFIG_BUFFER_COUNT=2
 
 # Track the stack size
 # Warning: This option increases the code size a lot.
@@ -182,7 +171,7 @@ CONFIG_REMOTE_DISPLAY=n
 # Display buffer size
 # This buffer is used as temporary space when sending commands to
 # the display. Longer texts will be truncated.
-CONFIG_DISPLAY_BUFFER_SIZE=40
+CONFIG_DISPLAY_BUFFER_SIZE=10
 
 # Capture unknown loaders to file
 #CONFIG_CAPTURE_LOADERS=y
@@ -196,7 +185,7 @@ CONFIG_P00CACHE=n
 
 # disable SD support
 # (the build system assumes that everything uses SD unless you enable this)
-#CONFIG_NO_SD=y
+#CONFIG_NO_SD=n
 
 # Default device address 11 doesn't conflict with internal drives
 # configured as 8 as seen on the CBM 8296D
