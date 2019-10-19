@@ -88,6 +88,7 @@ int main(void) {
   filesystem_init(0);
   // FIXME: change_init();
 
+
 #ifdef CONFIG_REMOTE_DISPLAY
   /* at this point all buffers should be free, */
   /* so just use the data area of the first to build the string */

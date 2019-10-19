@@ -51,7 +51,7 @@
 #include "doscmd.h"
 
 
-uint8_t menu_system_enabled = true;
+uint8_t menu_system_enabled = false;
 
 #ifndef CONFIG_DIR_BUFFERS
 #define CONFIG_DIR_BUFFERS 2

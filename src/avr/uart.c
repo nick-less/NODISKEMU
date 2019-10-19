@@ -160,8 +160,9 @@ void uart_print( unsigned char* s) {
 
 void uart_init(void) {
 #if CONFIG_HARDWARE_VARIANT == HW_ARDUINO_NANO
+// 112.5k bit
     UBRR0H = 0;
-    UBRR0L = 25;
+    UBRR0L = 8;
 
     UCSR0A = 0x00;
     UCSR0B = (1<<RXEN0)|(1<<TXEN0);

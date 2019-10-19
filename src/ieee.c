@@ -26,7 +26,7 @@
  */
 
 // If nonzero, output all bus data
-#define DEBUG_BUS_DATA 1
+// #define DEBUG_BUS_DATA 1
 
 // Ratio of bus interactions / other actions
 #define BUS_RATIO 255
@@ -389,7 +389,6 @@ static inline void ieee488_EnableAtnInterrupt(void) {
   EIMSK |= _BV(INT0);
 }
 
-
 static inline void ieee488_DisableAtnInterrupt(void) {
   EIMSK &= ~_BV(INT0);
 }
@@ -446,9 +445,52 @@ void ieee488_Init(void) {
   ieee488_SetDC(DC_DEVICE);
   IEEE_DDR_TE  |= _BV(IEEE_PIN_TE);             // TE  as output
   IEEE_DDR_ATN &= ~_BV(IEEE_PIN_ATN);           // ATN as input
+ 
   ieee488_DataListen();
   ieee488_CtrlPortsListen();
   ieee488_BusIdle();
+
+/*
+  while(1) {
+      uart_puts_P(PSTR("toggle data\r\n"));
+       ieee488_CtrlPortsTalk();   
+     ieee488_DataTalk();
+
+      for(int i=0;i<20;i++) {
+      ieee488_SetData(0xff);
+         delay_ms(1000);
+      ieee488_SetData(0);
+         delay_ms(1000);
+      }
+
+      uart_puts_P(PSTR("toggle eoi/ dav \r\n"));
+      for(int i=0;i<20;i++) {
+      ieee488_SetEOI(1);
+      ieee488_SetDAV(1);
+         delay_ms(1000);
+      ieee488_SetEOI(0);
+      ieee488_SetDAV(0);
+         delay_ms(1000);
+      }
+
+
+      ieee488_CtrlPortsListen();  
+      ieee488_DataListen();
+         uart_puts_P(PSTR("toggle nrcd/ ndac \r\n"));
+      for(int i=0;i<20;i++) {
+      ieee488_SetNDAC(1);
+      ieee488_SetNRFD(1);
+         delay_ms(1000);
+      ieee488_SetNDAC(0);
+      ieee488_SetNRFD(0);
+         delay_ms(1000);
+      }
+  }
+*/
+
+
+
+
   ieee488_InitAtnInterrupt();
 }
 
@@ -749,6 +791,11 @@ void handle_ieee488(void) {
   for (;;) {
 
     // Fetch all commands sent in the same ATN-low-cycle
+        
+#if DEBUG_BUS_DATA
+  uart_puthex(PINC); uart_putc(' ');
+  uart_puts_P(PSTR("+\r\n"));
+#endif
 
     ieee488_SetNDAC(0);
     ieee488_SetNRFD(1);                   // Say ready for data
@@ -767,7 +814,9 @@ void handle_ieee488(void) {
       }
     }
 
-
+#if DEBUG_BUS_DATA
+uart_puts_P(PSTR("*\r\n"));
+#endif
     ieee488_SetNRFD(0);                   // Say not ready for data
     cmd = ieee488_Data();
     ieee488_SetNDAC(1);                   // Say data accepted
@@ -776,6 +825,8 @@ void handle_ieee488(void) {
           ieee488_ATN()        ||         // ATN cycle aborted?
           ieee488_CheckIFC())             // interface clear?
       {
+        uart_puts_P(PSTR("-\r\n"));
+
          return;
       }
     }
@@ -785,7 +836,12 @@ void handle_ieee488(void) {
     Device = cmd & 0b00011111;
     sa     = cmd & 0b00001111;
 
+#if DEBUG_BUS_DATA
+
     uart_puthex(cmd); uart_putc(' ');
+    uart_puthex(sa); uart_putc(' ');
+    uart_puthex(cmd4); uart_putc(' ');
+#endif
 
     if (cmd == IEEE_UNLISTEN)             // UNLISTEN
       ieee488_Unlisten();

@@ -1222,45 +1222,43 @@ static inline uint8_t sdcard_wp(void) {
 // LED only when debug messages are de-selected:
 
 static inline void leds_init(void) {
-  DDRD |= _BV(PD0);
 #ifndef CONFIG_UART_DEBUG
-  DDRD |= _BV(PD1);
+  DDRD |= _BV(PB0);
+  DDRD |= _BV(PB1);
 #endif
 }
 
 static inline __attribute__((always_inline)) void set_busy_led(uint8_t state) {
 #ifndef CONFIG_UART_DEBUG
   if (state)
-    PORTD |= _BV(PD1);
+    PORTD |= _BV(PB1);
   else
-    PORTD &= ~_BV(PD1);
+    PORTD &= ~_BV(PB1);
 #endif
 }
 
-#  define LED_DIRTY_PORT        PORTD
-#  define LED_DIRTY_INPUT       PIND
-#  define LED_DIRTY_PIN         PD0
+#  define LED_DIRTY_PORT        PORTB
+#  define LED_DIRTY_INPUT       PINB
+#  define LED_DIRTY_PIN         PB0
 
 
-#  define IEEE_ATN_INT          INT26    /* ATN interrupt (required!) */
+#  define IEEE_ATN_INT          INT0    /* ATN interrupt (required!) */
 #  define IEEE_ATN_INT0
 
+
 #  define HAVE_7516X            /* Device uses 75160/75161 bus drivers */
-#  define IEEE_PORT_TE          PORTC   /* TE */
-#  define IEEE_DDR_TE           DDRC
-#  define IEEE_PIN_TE           PC4
 #  define IEEE_INPUT_ATN        PIND    /* ATN */
 #  define IEEE_PORT_ATN         PORTD
 #  define IEEE_DDR_ATN          DDRD
 #  define IEEE_PIN_ATN          PD2
-#  define IEEE_INPUT_NDAC       PINC    /* NDAC */
-#  define IEEE_PORT_NDAC        PORTC
-#  define IEEE_DDR_NDAC         DDRC
-#  define IEEE_PIN_NDAC         PC1
 #  define IEEE_INPUT_NRFD       PINC    /* NRFD */
 #  define IEEE_PORT_NRFD        PORTC
 #  define IEEE_DDR_NRFD         DDRC
 #  define IEEE_PIN_NRFD         PC0
+#  define IEEE_INPUT_NDAC       PINC    /* NDAC */
+#  define IEEE_PORT_NDAC        PORTC
+#  define IEEE_DDR_NDAC         DDRC
+#  define IEEE_PIN_NDAC         PC1
 #  define IEEE_INPUT_DAV        PINC    /* DAV */
 #  define IEEE_PORT_DAV         PORTC
 #  define IEEE_DDR_DAV          DDRC
@@ -1269,6 +1267,9 @@ static inline __attribute__((always_inline)) void set_busy_led(uint8_t state) {
 #  define IEEE_PORT_EOI         PORTC
 #  define IEEE_DDR_EOI          DDRC
 #  define IEEE_PIN_EOI          PC3
+#  define IEEE_PORT_TE          PORTC   /* TE */
+#  define IEEE_DDR_TE           DDRC
+#  define IEEE_PIN_TE           PC4
 #  define IEEE_INPUT_IFC        PINC    /* IFC */
 #  define IEEE_PORT_IFC         PORTC
 #  define IEEE_DDR_IFC          DDRC
@@ -1307,8 +1308,6 @@ static inline void ieee_interface_init(void) {
   IEEE_DDR_ATN  &= (uint8_t) ~ _BV(IEEE_PIN_ATN);   // Define ATN as input
   IEEE_DDR_IFC  &= (uint8_t) ~ IEEE_BIT_IFC;        // Define IFC as input
 }
-
- #undef COND_INV
 
 
 #else

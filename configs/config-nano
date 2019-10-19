@@ -66,7 +66,7 @@ CONFIG_BOOT_DEVID=0x49454321
 CONFIG_NO_D64=n
 
 # Enable UART debugging - requires 24 bytes plus buffer size in RAM
-CONFIG_UART_DEBUG=y
+CONFIG_UART_DEBUG=n
 
 # Baud rate of the UART, not used if CONFIG_UART_DEBUG is disabled
 CONFIG_UART_BAUDRATE=19200
@@ -150,7 +150,7 @@ CONFIG_COMMAND_BUFFER_SIZE=120
 
 # Number of sector buffers (256 byte+a bit of overhead)
 #  In general: More buffers -> More open files at the same time
-CONFIG_BUFFER_COUNT=2
+CONFIG_BUFFER_COUNT=8
 
 # Track the stack size
 # Warning: This option increases the code size a lot.
@@ -162,10 +162,6 @@ CONFIG_MAX_PARTITIONS=2
 # Real Time Clock option
 #   disable all to disable T-R/T-W commands
 CONFIG_RTC_SOFTWARE=n
-#CONFIG_RTC_PCF8583=y
-#CONFIG_RTC_LPC17XX=y
-#   Note: DS3231 and 1307 cannot both be enabled
-#CONFIG_RTC_DS3231=y
 CONFIG_RTC_DS1307=n
 
 # I2C display
@@ -174,21 +170,16 @@ CONFIG_REMOTE_DISPLAY=n
 # Display buffer size
 # This buffer is used as temporary space when sending commands to
 # the display. Longer texts will be truncated.
-CONFIG_DISPLAY_BUFFER_SIZE=10
+CONFIG_DISPLAY_BUFFER_SIZE=40
 
 # Capture unknown loaders to file
 #CONFIG_CAPTURE_LOADERS=y
 #CONFIG_CAPTURE_BUFFER_SIZE=3000
 
 # cache [PSUR]00 internal file names
-CONFIG_P00CACHE=n
+CONFIG_P00CACHE=y
+CONFIG_P00CACHE_SIZE=9000
 
-# size of the [PSUR]00 name cache in bytes
-#CONFIG_P00CACHE_SIZE=32768
-
-# disable SD support
-# (the build system assumes that everything uses SD unless you enable this)
-#CONFIG_NO_SD=n
 
 # Default device address 11 doesn't conflict with internal drives
 # configured as 8 as seen on the CBM 8296D

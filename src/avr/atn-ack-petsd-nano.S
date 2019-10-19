@@ -65,6 +65,7 @@ INT0_vect:
 
         clr TMP                 ; switch data lines to input
         out IO_DDR_DATA, TMP
+        cbi 0x0A, 7             ; D8 (PD7) as input
 
         cbi IO_DDR_NRFD, NRFD   ; NRFD as input
         cbi IO_DDR_NDAC, NDAC   ; NDAC as input
@@ -96,3 +97,4 @@ INT0_vect:
         pop SAVE_SREG
 
         reti
+        
