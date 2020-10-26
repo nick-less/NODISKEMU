@@ -1,29 +1,20 @@
 /* NODISKEMU - SD/MMC to IEEE-488 interface/controller
    Copyright (C) 2007-2018  Ingo Korb <ingo@akana.de>
    Copyright (C) 2015-2018  Nils Eilers <nils.eilers@gmx.de>
-
    NODISKEMU is a fork of sd2iec by Ingo Korb (et al.), http://sd2iec.de
-
    Inspired by MMC2IEC by Lars Pontoppidan et al.
-
    FAT filesystem access based on code from ChaN and Jim Brain, see ff.c|h.
-
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; version 2 of the License only.
-
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-
-
    arch-config.h: The main architecture-specific config header
-
 */
 
 #ifndef ARCH_CONFIG_H
@@ -39,8 +30,12 @@
 #define HW_PETSD         8
 #define HW_PETSDPLUS     9
 
+#define HW_ARDUINO_NANO  25
+
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <stdbool.h>
+
 /* Include avrcompat.h to get the PA0..PD7 macros on 1284P */
 #include "avrcompat.h"
 
@@ -150,7 +145,7 @@ static inline __attribute__((always_inline)) void sdcard2_set_ss(uint8_t state) 
 /* #  define SD_SUPPLY_VOLTAGE (1L<<23)  / * 3.5V - 3.6V */
 
 /* SPI clock divisors - the slow one must be 400KHz or slower,        */
-/* the fast one can be as high as you thing your hardware will handle */
+/* the fast one can be as high as you think your hardware will handle */
 #  define SPI_DIVISOR_SLOW 32
 #  define SPI_DIVISOR_FAST 4
 
@@ -1073,7 +1068,9 @@ static inline uint8_t device_hw_address(void) {
     addr = 8;
     if (get_key_state(KEY_SEL))  addr += 1;
     if (get_key_state(KEY_NEXT)) addr += 2;
+#ifdef UART_DEBUG
     printf("dhw:%d\r\n", addr);
+#endif
   }
   return addr;
 }
@@ -1170,6 +1167,140 @@ static inline void iec_interrupts_init(void) {
 
 
 #  endif
+#elif CONFIG_HARDWARE_VARIANT == HW_ARDUINO_NANO
+
+#define FUNC_INLINE inline
+
+/* ---------- Hardware configuration: petSD nano --------- */
+#define HAVE_SD
+
+#ifndef CONFIG_IGNORE_CARD_DETECT
+#  define SD_CHANGE_HANDLER     ISR(PCINT3_vect)
+#endif
+
+#define SD_SUPPLY_VOLTAGE (1L<<21)
+
+/* 250 kHz slow, 2 MHz fast */
+#define SPI_DIVISOR_SLOW 32
+#define SPI_DIVISOR_FAST 4
+
+static inline void sdcard_interface_init(void) {
+  DDRD   &= ~_BV(PD5);            /* card detect */
+  PORTD  |=  _BV(PD5);
+  DDRD   &= ~_BV(PD6);            /* write protect  */
+  PORTD  |=  _BV(PD6);
+#ifndef CONFIG_IGNORE_CARD_DETECT
+  PCMSK3 |=  _BV(PCINT29);        /* card change interrupt */
+  PCICR  |=  _BV(PCIE3);
+  PCIFR  |=  _BV(PCIF3);
+#endif
+}
+
+static inline uint8_t sdcard_detect(void) {
+#ifdef CONFIG_IGNORE_CARD_DETECT
+  return 1;
+#else
+  return (!(PIND & _BV(PD5)));
+#endif
+}
+
+static inline uint8_t sdcard_wp(void) {
+  return (PIND & _BV(PD6));
+}
+
+
+// The busy-LED and the UART's TxD share the same port pin, so light the
+// LED only when debug messages are de-selected:
+
+static inline void leds_init(void) {
+#ifndef CONFIG_UART_DEBUG
+  DDRD |= _BV(PB0);
+  DDRD |= _BV(PB1);
+#endif
+}
+
+static inline __attribute__((always_inline)) void set_busy_led(uint8_t state) {
+#ifndef CONFIG_UART_DEBUG
+  if (state)
+    PORTD |= _BV(PB1);
+  else
+    PORTD &= ~_BV(PB1);
+#endif
+}
+
+#  define LED_DIRTY_PORT        PORTB
+#  define LED_DIRTY_INPUT       PINB
+#  define LED_DIRTY_PIN         PB0
+
+
+#  define IEEE_ATN_INT          INT0    /* ATN interrupt (required!) */
+#  define IEEE_ATN_INT0
+
+
+#  define HAVE_7516X            /* Device uses 75160/75161 bus drivers */
+#  define IEEE_INPUT_ATN        PIND    /* ATN */
+#  define IEEE_PORT_ATN         PORTD
+#  define IEEE_DDR_ATN          DDRD
+#  define IEEE_PIN_ATN          PD2
+#  define IEEE_INPUT_NRFD       PINC    /* NRFD */
+#  define IEEE_PORT_NRFD        PORTC
+#  define IEEE_DDR_NRFD         DDRC
+#  define IEEE_PIN_NRFD         PC0
+#  define IEEE_INPUT_NDAC       PINC    /* NDAC */
+#  define IEEE_PORT_NDAC        PORTC
+#  define IEEE_DDR_NDAC         DDRC
+#  define IEEE_PIN_NDAC         PC1
+#  define IEEE_INPUT_DAV        PINC    /* DAV */
+#  define IEEE_PORT_DAV         PORTC
+#  define IEEE_DDR_DAV          DDRC
+#  define IEEE_PIN_DAV          PC2
+#  define IEEE_INPUT_EOI        PINC    /* EOI */
+#  define IEEE_PORT_EOI         PORTC
+#  define IEEE_DDR_EOI          DDRC
+#  define IEEE_PIN_EOI          PC3
+#  define IEEE_PORT_TE          PORTC   /* TE */
+#  define IEEE_DDR_TE           DDRC
+#  define IEEE_PIN_TE           PC4
+#  define IEEE_INPUT_IFC        PINC    /* IFC */
+#  define IEEE_PORT_IFC         PORTC
+#  define IEEE_DDR_IFC          DDRC
+#  define IEEE_PIN_IFC          PC5
+#  define IEEE_D_PIN            PINA    /* Data */
+#  define IEEE_D_PORT           PORTA
+#  define IEEE_D_DDR            DDRA
+// all data on port a
+//#  define IEEE_INPUT_D7         PIND    /* Data bit 7 on separate port */
+//#  define IEEE_PORT_D7          PORTD
+//#  define IEEE_DDR_D7           DDRD
+//#  define IEEE_PIN_D7           PD7
+#  define IEEE_BIT_TE           _BV(IEEE_PIN_TE)
+#  define IEEE_BIT_IFC          _BV(IEEE_PIN_IFC)
+
+
+// nano petSD has no buttons
+static inline void buttons_init(void) {
+
+}
+
+static inline void device_hw_address_init(void) {
+  // left intentionally blank
+}
+
+static inline uint8_t device_hw_address(void) {
+  return CONFIG_DEFAULT_ADDR;
+}
+
+
+static inline void ieee_interface_init(void) {
+  IEEE_PORT_TE  &= (uint8_t) ~ IEEE_BIT_TE;         // Set TE low
+  IEEE_DDR_TE   |= IEEE_BIT_TE;                     // Define TE  as output
+  IEEE_PORT_ATN |= _BV(IEEE_PIN_ATN);               // Enable pull-up for ATN
+  IEEE_PORT_IFC |= IEEE_BIT_IFC;                    // Enable pull-up for IFC
+  IEEE_DDR_ATN  &= (uint8_t) ~ _BV(IEEE_PIN_ATN);   // Define ATN as input
+  IEEE_DDR_IFC  &= (uint8_t) ~ IEEE_BIT_IFC;        // Define IFC as input
+}
+
+
 #else
 #  error "CONFIG_HARDWARE_VARIANT is unset or set to an unknown value."
 #endif
@@ -1186,183 +1317,6 @@ static inline void iec_interrupts_init(void) {
 #define HAVE_DUAL_INTERFACE
 #endif
 
-
-/* --- IEC --- */
-#ifdef CONFIG_HAVE_IEC
-
-#define IEC_BIT_ATN      _BV(IEC_PIN_ATN)
-#define IEC_BIT_DATA     _BV(IEC_PIN_DATA)
-#define IEC_BIT_CLOCK    _BV(IEC_PIN_CLOCK)
-#define IEC_BIT_SRQ      _BV(IEC_PIN_SRQ)
-
-/* Return type of iec_bus_read() */
-typedef uint8_t iec_bus_t;
-
-/* OPIN definitions are only used in the assembler module */
-#ifdef IEC_SEPARATE_OUT
-#  define IEC_OBIT_ATN   _BV(IEC_OPIN_ATN)
-#  define IEC_OBIT_DATA  _BV(IEC_OPIN_DATA)
-#  define IEC_OBIT_CLOCK _BV(IEC_OPIN_CLOCK)
-#  define IEC_OBIT_SRQ   _BV(IEC_OPIN_SRQ)
-#  define IEC_OUTPUT     IEC_PORT
-#else
-#  define IEC_OPIN_ATN   IEC_PIN_ATN
-#  define IEC_OPIN_DATA  IEC_PIN_DATA
-#  define IEC_OPIN_CLOCK IEC_PIN_CLOCK
-#  define IEC_OPIN_SRQ   IEC_PIN_SRQ
-#  define IEC_OBIT_ATN   IEC_BIT_ATN
-#  define IEC_OBIT_DATA  IEC_BIT_DATA
-#  define IEC_OBIT_CLOCK IEC_BIT_CLOCK
-#  define IEC_OBIT_SRQ   IEC_BIT_SRQ
-#  define IEC_OUTPUT     IEC_DDR
-#endif
-
-#ifndef IEC_PORTIN
-#  define IEC_PORTIN IEC_PORT
-#endif
-
-#ifndef IEC_DDRIN
-#  define IEC_DDRIN  IEC_DDR
-#  define IEC_DDROUT IEC_DDR
-#endif
-
-/* The AVR based devices usually invert output lines, */
-/* so this can be the default for most configurations.   */
-#ifndef IEC_OUTPUTS_NONINVERTED
-#define IEC_OUTPUTS_INVERTED
-#endif
-
-#ifdef IEC_PCMSK
-   /* For hardware configurations using PCINT for IEC IRQs */
-#  define set_iec_atn_irq(x) \
-     if (x) { IEC_PCMSK |= _BV(IEC_PIN_ATN); } \
-     else { IEC_PCMSK &= (uint8_t)~_BV(IEC_PIN_ATN); }
-#  define set_clock_irq(x) \
-     if (x) { IEC_PCMSK |= _BV(IEC_PIN_CLOCK); } \
-     else { IEC_PCMSK &= (uint8_t)~_BV(IEC_PIN_CLOCK); }
-#  define HAVE_CLOCK_IRQ
-#else
-     /* Hardware ATN interrupt */
-#  define set_iec_atn_irq(x) \
-     if (x) { EIMSK |= _BV(IEC_ATN_INT); } \
-     else { EIMSK &= (uint8_t)~_BV(IEC_ATN_INT); }
-
-#  ifdef IEC_CLK_INT
-     /* Hardware has a CLK interrupt */
-#    define set_clock_irq(x) \
-       if (x) { EIMSK |= _BV(IEC_CLK_INT); } \
-       else { EIMSK &= (uint8_t)~_BV(IEC_CLK_INT); }
-#    define HAVE_CLOCK_IRQ
-#  endif
-#endif
-
-/* IEC output functions */
-#ifdef IEC_OUTPUTS_INVERTED
-#  define COND_INV(x) (!(x))
-#else
-#  define COND_INV(x) (x)
-#endif
-
-static inline __attribute__((always_inline)) void set_atn(uint8_t state) {
-  if (COND_INV(state))
-    IEC_OUTPUT |= IEC_OBIT_ATN;
-  else
-    IEC_OUTPUT &= ~IEC_OBIT_ATN;
-}
-
-static inline __attribute__((always_inline)) void set_data(uint8_t state) {
-  if (COND_INV(state))
-    IEC_OUTPUT |= IEC_OBIT_DATA;
-  else
-    IEC_OUTPUT &= ~IEC_OBIT_DATA;
-}
-
-static inline __attribute__((always_inline)) void set_clock(uint8_t state) {
-  if (COND_INV(state))
-    IEC_OUTPUT |= IEC_OBIT_CLOCK;
-  else
-    IEC_OUTPUT &= ~IEC_OBIT_CLOCK;
-}
-
-#ifdef IEC_SEPARATE_OUT
-static inline __attribute__((always_inline)) void set_srq(uint8_t state) {
-  if (COND_INV(state))
-    IEC_OUTPUT |= IEC_OBIT_SRQ;
-  else
-    IEC_OUTPUT &= ~IEC_OBIT_SRQ;
-}
-#else
-/* this version of the function turns on the pullups when state is 1 */
-/* note: same pin for in/out implies inverted output via DDR */
-static inline __attribute__((always_inline)) void set_srq(uint8_t state) {
-  if (state) {
-    IEC_DDR  &= ~IEC_OBIT_SRQ;
-    IEC_PORT |=  IEC_OBIT_SRQ;
-  } else {
-    IEC_PORT &= ~IEC_OBIT_SRQ;
-    IEC_DDR  |=  IEC_OBIT_SRQ;
-  }
-}
-#endif
-
-#undef COND_INV
-
-// for testing purposes only, probably does not do what you want!
-#define toggle_srq() IEC_INPUT |= IEC_OBIT_SRQ
-
-/* IEC lines initialisation */
-static inline void iec_interface_init(void) {
-#ifdef IEC_SEPARATE_OUT
-  /* Set up the input port - pullups on all lines */
-  IEC_DDRIN  &= (uint8_t)~(IEC_BIT_ATN  | IEC_BIT_CLOCK  | IEC_BIT_DATA  | IEC_BIT_SRQ);
-  IEC_PORTIN |= IEC_BIT_ATN | IEC_BIT_CLOCK | IEC_BIT_DATA | IEC_BIT_SRQ;
-  /* Set up the output port - all lines high */
-  IEC_DDROUT |=            IEC_OBIT_ATN | IEC_OBIT_CLOCK | IEC_OBIT_DATA | IEC_OBIT_SRQ;
-#ifdef IEC_OUTPUTS_INVERTED
-  IEC_PORT   &= (uint8_t)~(IEC_OBIT_ATN | IEC_OBIT_CLOCK | IEC_OBIT_DATA | IEC_OBIT_SRQ);
-#else
-  IEC_PORT   |= (IEC_OBIT_ATN | IEC_OBIT_CLOCK | IEC_OBIT_DATA | IEC_OBIT_SRQ);
-#endif
-#else
-  /* Pullups would be nice, but AVR can't switch from */
-  /* low output to hi-z input directly                */
-  IEC_DDR  &= (uint8_t)~(IEC_BIT_ATN | IEC_BIT_CLOCK | IEC_BIT_DATA | IEC_BIT_SRQ);
-  IEC_PORT &= (uint8_t)~(IEC_BIT_ATN | IEC_BIT_CLOCK | IEC_BIT_DATA);
-  /* SRQ is special-cased because it may be unconnected */
-  IEC_PORT |= IEC_BIT_SRQ;
-#endif
-
-#ifdef HAVE_PARALLEL
-  /* set data lines to input with pullup */
-  PARALLEL_PDDR  = 0;
-  PARALLEL_PPORT = 0xff;
-
-  /* set HSK_OUT and _IN to input with pullup */
-  PARALLEL_HDDR  &= ~(_BV(PARALLEL_HSK_OUT_BIT) |
-                      _BV(PARALLEL_HSK_IN_BIT));
-  PARALLEL_HPORT |= _BV(PARALLEL_HSK_OUT_BIT) |
-                    _BV(PARALLEL_HSK_IN_BIT);
-
-  /* enable interrupt for parallel handshake */
-#  ifdef PARALLEL_PCINT_GROUP
-  /* excluse PCINT group */
-  PARALLEL_PCMSK |= _BV(PARALLEL_HSK_IN_BIT);
-  PCICR |= _BV(PARALLEL_PCINT_GROUP);
-  PCIFR |= _BV(PARALLEL_PCINT_GROUP);
-#  else
-  /* exclusive INTx line */
-#    error Implement me!
-#  endif
-#endif
-
-#if CONFIG_HARDWARE_VARIANT == HW_PETSDPLUS
-  // Enable IEC bus. This is done by a wire link inside the adapter cable
-  // for older petSD+ boards without IEC connector
-  i2c_write_register(I2C_SLAVE_ADDRESS, IO_IEC, 0);
-#endif
-}
-
-#endif /* CONFIG_HAVE_IEC */
 
 
 /* The assembler module needs the vector names, */

@@ -99,8 +99,12 @@ L_converted:
         ori     r24, 1			; SELECT
 
 #else
-
+#if CONFIG_HARDWARE_VARIANT == HW_ARDUINO_NANO
+        clr     r24
+       
+#else
 #error Missing readbuttons.inc definition for your hardware variant
+#endif
 #endif
 #endif
 #endif
