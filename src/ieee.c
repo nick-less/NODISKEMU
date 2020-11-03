@@ -524,9 +524,9 @@ void ieee488_ListenLoop(uint8_t action, uint8_t sa) {
     return;
   }
 
-  if (sa == 15)
+  if (sa == 15) {
     command_received = true;
-
+  }
   printf("LL %d\r\n", sa);
 
   for (;;) {

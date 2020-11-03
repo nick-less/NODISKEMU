@@ -1428,6 +1428,10 @@ void fatops_init(uint8_t preserve_path) {
     }
   }
 
+    uart_puthex(drive); uart_putc(' ');
+        uart_puts_P(PSTR("drives\r\n"));
+
+
   if (!preserve_path) {
     current_part = 0;
     display_current_part(0);

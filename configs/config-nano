@@ -58,10 +58,8 @@ CONFIG_LINKER_RELAX=n
 CONFIG_MCU_FREQ=16000000
 
 # Add a bootloader signature
-CONFIG_BOOTLOADER=n
-
-# Value of the signature word
-CONFIG_BOOT_DEVID=0x49454321
+CONFIG_BOOTLOADER=y
+CONFIG_BOOT_DEVID=0x2b445370
 
 CONFIG_NO_D64=n
 
@@ -150,7 +148,7 @@ CONFIG_COMMAND_BUFFER_SIZE=120
 
 # Number of sector buffers (256 byte+a bit of overhead)
 #  In general: More buffers -> More open files at the same time
-CONFIG_BUFFER_COUNT=8
+CONFIG_BUFFER_COUNT=15
 
 # Track the stack size
 # Warning: This option increases the code size a lot.

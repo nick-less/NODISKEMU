@@ -824,6 +824,7 @@ void file_open(uint8_t secondary) {
   buffer_t *buf;
   uint8_t i = 0;
   uint8_t recordlen = 0;
+  uart_puts_P(PSTR("file_open\r\n"));
 
   /* If the secondary is already in use, close the existing buffer */
   buf = find_buffer(secondary);
@@ -925,6 +926,8 @@ void file_open(uint8_t secondary) {
 
   /* Load directory? */
   if (command_buffer[0] == '$') {
+      uart_puts_P(PSTR("load_directory\r\n"));
+
     load_directory(secondary);
     return;
   }

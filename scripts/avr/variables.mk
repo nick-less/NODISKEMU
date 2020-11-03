@@ -19,6 +19,11 @@ ifeq ($(CONFIG_HARDWARE_VARIANT),9)
   ASMSRC += avr/atn-ack-petsd+.S
 endif
 
+ifeq ($(CONFIG_HARDWARE_VARIANT),25)
+  ASMSRC += avr/atn-ack-petsd-nano.S
+endif
+
+
 ifdef NEED_I2C
   SRC += avr/softi2c.c
 endif
